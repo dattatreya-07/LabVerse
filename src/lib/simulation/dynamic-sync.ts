@@ -215,6 +215,38 @@ export function syncDynamicSimulation(
         break;
       }
 
+      case 'ANTENNA_TOWER': {
+        const freq = parameters['frequency'] ?? 1500;
+        const power = parameters['transmit_power'] ?? 10;
+        nextComp.properties.frequency = freq;
+        nextComp.properties.power = power;
+        break;
+      }
+
+      case 'RADIATION_PROBE': {
+        const dist = parameters['probe_distance'] ?? 5.0;
+        const angle = parameters['probe_angle'] ?? 0;
+        const eField = measMap.get('e_field') ?? simulationResult.derivedValues?.eField ?? 3.5;
+        nextComp.properties.distance = dist;
+        nextComp.properties.angle = angle;
+        nextComp.state = {
+          ...nextComp.state,
+          displayValue: `E = ${Number(eField).toFixed(2)} V/m`,
+          valueNumber: Number(eField),
+        };
+        break;
+      }
+
+      case 'SIGNAL_GENERATOR': {
+        const freq = parameters['frequency'] ?? 1500;
+        nextComp.properties.frequency = freq;
+        nextComp.state = {
+          ...nextComp.state,
+          displayValue: `${freq} MHz`,
+        };
+        break;
+      }
+
       default:
         break;
     }

@@ -9,18 +9,19 @@ import {
   Sun, 
   Atom, 
   Dna, 
-  TrendingUp,
-  FlaskConical,
+  TrendingUp, 
+  FlaskConical, 
   Play, 
   Clock, 
   ArrowRight, 
   BookOpen, 
   Compass, 
-  Search,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  GraduationCap
+  Search, 
+  CheckCircle2, 
+  AlertCircle, 
+  Sparkles, 
+  GraduationCap, 
+  Radio 
 } from 'lucide-react';
 
 interface ExperimentCatalogProps {
@@ -50,6 +51,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
   const domains: Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'ALL', label: 'All Domains', icon: Compass },
     { id: 'PHYSICS', label: 'Physics (All)', icon: Activity },
+    { id: 'ECE', label: 'ECE & Antennas', icon: Radio },
     { id: 'ELECTRONICS', label: 'Electronics', icon: Zap },
     { id: 'MECHANICS', label: 'Mechanics', icon: Activity },
     { id: 'QUANTUM', label: 'Quantum', icon: Sun },
@@ -74,6 +76,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
   const getDomainIcon = (domain: DomainCategory) => {
     switch (domain) {
+      case 'ECE': return <Radio className="w-5 h-5 text-indigo-400" />;
       case 'ELECTRONICS': return <Zap className="w-5 h-5 text-cyan-400" />;
       case 'MECHANICS': return <Activity className="w-5 h-5 text-amber-400" />;
       case 'QUANTUM': return <Sun className="w-5 h-5 text-purple-400" />;

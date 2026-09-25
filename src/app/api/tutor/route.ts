@@ -83,16 +83,15 @@ export async function POST(req: NextRequest) {
 [Circuit Topology: ${latestResult?.topology?.circuitTopology || 'N/A'}]
 [Topology Status: ${latestResult?.topology?.message || 'N/A'}]`);
 
+    const geminiApiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     const groqApiKey = process.env.GROQ_API_KEY;
     const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
-    if (groqApiKey) {
-      try {
-        const ragContextText = retrievalResult.chunks.map((c, idx) => `[Source ${idx + 1}: ${c.title}]\n${c.content}`).join('\n\n');
-        
-        const systemPrompt = `You are LabVerse AI Science & Diagnostic Tutor, an expert academic assistant for ${expDef.title}.
-Analyze the student's query against the live virtual laboratory state and verified knowledge base below.
-Explain scientific principles, diagnose hardware/fault anomalies, and guide the student step-by-step.
+    const ragContextText = retrievalResult.chunks.map((c, idx) => `[Source ${idx + 1}: ${c.title}]\n${c.content}`).join('\n\n');
+    
+    const systemPrompt = `You are LabVerse AI Expert Science & Diagnostic Tutor for ${expDef.title} (${expDef.domain} Domain).
+Analyze the student's question against the live virtual laboratory state and verified knowledge base below.
+Encourage scientific reasoning, explain 3D physical principles, equations, and diagnose hardware/fault anomalies.
 Always refer to actual simulated readings from the live state. Never fabricate measurements or fake parameters.
 
 Live Laboratory State:
@@ -101,8 +100,50 @@ ${stateContext}
 Retrieved Grounded Knowledge Corpus:
 ${ragContextText}
 
-${!retrievalResult.hasRelevantEvidence ? '[Note: Low retrieval match. Explain using general physics/electronics principles.]' : ''}`;
+${!retrievalResult.hasRelevantEvidence ? '[Note: Low retrieval match. Explain using general principles.]' : ''}`;
 
+    // 1. Try Gemini API first if configured
+    if (geminiApiKey) {
+      try {
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${systemPrompt}\n\nStudent Question:\n${sanitizedQuestion}` }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 600,
+            }
+          })
+        });
+
+        if (geminiRes.ok) {
+          const gData = await geminiRes.json();
+          const aiAnswer = gData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (aiAnswer) {
+            const tutorResp: TutorResponse = {
+              answer: aiAnswer,
+              sources,
+              isCuratedFallback: false,
+              grounded: true,
+              timestamp: new Date().toLocaleTimeString(),
+            };
+            return applySecurityHeaders(NextResponse.json(tutorResp));
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('Gemini API call failed, falling back:', geminiErr);
+      }
+    }
+
+    // 2. Try Groq API if configured
+    if (groqApiKey) {
+      try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -137,8 +178,7 @@ ${!retrievalResult.hasRelevantEvidence ? '[Note: Low retrieval match. Explain us
               grounded: retrievalResult.hasRelevantEvidence,
               timestamp: new Date().toLocaleTimeString(),
             };
-            const jsonResp = NextResponse.json(tutorResp);
-            return applySecurityHeaders(jsonResp);
+            return applySecurityHeaders(NextResponse.json(tutorResp));
           }
         }
       } catch (groqErr) {
@@ -178,6 +218,59 @@ function generateCuratedResponse(
 ): string {
   const lower = q.toLowerCase();
 
+  // Antenna specific queries
+  if (expDef.id === 'antenna-radiation' || expDef.domain === 'ECE') {
+    const eField = latestResult?.measurements.find(m => m.id === 'e_field')?.observedValue ?? '3.50';
+    const fspl = latestResult?.measurements.find(m => m.id === 'path_loss')?.observedValue ?? '51.5';
+    const s = latestResult?.measurements.find(m => m.id === 'power_density')?.observedValue ?? '32.5';
+    const wave = latestResult?.measurements.find(m => m.id === 'wavelength')?.observedValue ?? '20.0';
+
+    if (lower.includes('dish') || lower.includes('focus') || lower.includes('beam')) {
+      return `### 📡 Parabolic Dish Directivity & Beam Focus
+A **Parabolic Dish** uses a metallic reflector surface to focus spherical wavefronts into a highly collimated **pencil beam lobe**.
+
+- **Antenna Gain ($G_t$):** ~28.2 (14.5 dBi) vs Dipole (2.15 dBi).
+- **Beamwidth (HPBW):** Extremely narrow (~18° Half Power Beam Width).
+- **Physics Principle:** By focusing RF transmit energy in a single direction $\\theta = 0^\\circ$, peak Electric Field strength ($E$) and Poynting power density ($S$) increase dramatically along the main axis compared to isotropic radiation.`;
+    }
+
+    if (lower.includes('field') || lower.includes('formula') || lower.includes('equation') || lower.includes('e-field')) {
+      return `### ⚡ Electric Field Intensity $E(r)$ Derivation
+The far-field Peak Electric Field strength at radial probe distance $r$ from the transmitter is given by:
+
+$$
+E(r) = \\frac{\\sqrt{30 \\cdot P_t \\cdot G_t}}{r} \\quad \\text{[V/m]}
+$$
+
+**Current Simulation Parameters:**
+- **Electric Field Strength $E$:** **${eField} V/m**
+- **Poynting Power Density $S$:** **${s} mW/m²** ($S = \\frac{|E|^2}{\\eta_0}$, where $\\eta_0 = 377\\,\\Omega$)
+- **Wave Attenuation:** $E \\propto \\frac{1}{r}$ (Inverse-Square Law for power density $S \\propto \\frac{1}{r^2}$).`;
+    }
+
+    if (lower.includes('loss') || lower.includes('fspl') || lower.includes('frequency') || lower.includes('path')) {
+      return `### 📉 Free Space Path Loss (FSPL) & Frequency Scaling
+Free Space Path Loss measures how much signal attenuates as electromagnetic waves expand spherically over distance:
+
+$$
+\\text{FSPL (dB)} = 20 \\log_{10}(r) + 20 \\log_{10}(f_{\\text{MHz}}) - 27.55
+$$
+
+**Active Lab Metrics:**
+- **Current FSPL:** **${fspl} dB**
+- **Wavelength ($\\lambda = \\frac{c}{f}$):** **${wave} cm**
+
+**Key Concept:** Higher carrier frequencies ($f$) have shorter wavelengths ($\\lambda$), resulting in smaller effective aperture capture areas at the receiver probe and higher free space path loss in dB over distance.`;
+    }
+
+    if (lower.includes('dipole') || lower.includes('yagi') || lower.includes('difference')) {
+      return `### 🔄 Omni Dipole vs Yagi-Uda Array Comparison
+1. **Omni-Directional Dipole:** Radiates energy uniformly in 360° horizontally, creating a characteristic **3D Torus (Donut) radiation pattern**.
+2. **Yagi-Uda Array:** Employs passive reflector and director rods to create an asymmetrical **end-fire beam lobe** with back/side lobes (~10.5 gain).
+3. **Parabolic Dish:** Maximizes long-range directional gain for satellite communication links.`;
+    }
+  }
+
   // Fault 1: Open circuit
   if (activeFaults?.includes('FAULT_OPEN_CIRCUIT') || latestResult?.topology?.circuitTopology === 'OPEN' || lower.includes('zero') || lower.includes('open')) {
     return `### 🔍 Open Circuit Discontinuity Diagnosis
@@ -214,9 +307,9 @@ The physical current in the wire is actually **${theoI} A**, but the instrument'
 ${expDef.theory.corePrinciple}
 
 **Governing Formula:**
-$$\n${expDef.report.governingFormulaLatex}\n$$
+$$
+${expDef.report.governingFormulaLatex}
+$$
 
-${latestResult ? `**Active Measurements:**\n` + latestResult.measurements.map(m => `- **${m.label}:** ${m.observedValue} ${m.unit} (Theoretical: ${m.theoreticalValue} ${m.unit})`).join('\n') : '*Tip: Click Run Experiment to record your first measurement.*'}
-
-*Note: Server is operating in offline curated grounded knowledge mode. Set \`GROQ_API_KEY\` in environment settings for live LLM reasoning.*`;
+${latestResult ? `**Active Measurements:**\n` + latestResult.measurements.map(m => `- **${m.label}:** ${m.observedValue} ${m.unit} (Theoretical: ${m.theoreticalValue} ${m.unit})`).join('\n') : '*Tip: Change frequency or antenna type to observe live wave dynamics.*'}`;
 }

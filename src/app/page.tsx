@@ -42,7 +42,7 @@ export default function Home() {
     // 1. Read URL Search Params
     const searchParams = new URLSearchParams(window.location.search);
     const tabParam = searchParams.get('tab') as NavTab | null;
-    const expParam = searchParams.get('exp');
+    const expParam = searchParams.get('exp') || searchParams.get('experiment');
 
     const targetExpId = expParam || 'ohms-law';
     if (expParam) {
@@ -138,6 +138,7 @@ export default function Home() {
     localStorage.setItem('labverse_theme', nextTheme);
   };
 
+  // Update experiment when selectedExpId changes
   const handleSelectExperiment = (expId: string) => {
     setSelectedExpId(expId);
     const exp = getExperiment(expId);

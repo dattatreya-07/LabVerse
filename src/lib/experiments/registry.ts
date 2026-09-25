@@ -4,16 +4,19 @@ import { pendulumExperiment } from './definitions/pendulum';
 import { photoelectricExperiment } from './definitions/photoelectric';
 import { chemistryKineticsExperiment } from './definitions/chemistry-kinetics';
 import { financePortfolioExperiment } from './definitions/finance-portfolio';
+import { antennaRadiationExperiment } from './definitions/antenna-radiation';
 
 export { 
   ohmsLawExperiment, 
   pendulumExperiment, 
   photoelectricExperiment,
+  antennaRadiationExperiment,
   chemistryKineticsExperiment,
   financePortfolioExperiment
 };
 
 export const EXPERIMENT_CATALOG: ExperimentDefinition[] = [
+  antennaRadiationExperiment,
   ohmsLawExperiment,
   pendulumExperiment,
   photoelectricExperiment,

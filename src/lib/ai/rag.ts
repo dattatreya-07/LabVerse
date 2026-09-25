@@ -1,65 +1,82 @@
 import { RAGChunk } from '@/types';
 
-export const OHMS_LAW_KNOWLEDGE_BASE: RAGChunk[] = [
+export const COMPREHENSIVE_KNOWLEDGE_BASE: RAGChunk[] = [
+  // OHM'S LAW
   {
-    id: 'kb-theory-01',
-    title: "Ohm's Law Core Principle & Equation",
+    id: 'kb-ohms-01',
+    experimentId: 'ohms-law',
+    title: "Ohm's Law Core Principle & Proportionality",
     category: 'THEORY',
     source: "Physics Lab Manual: Fundamental Electrodynamics Section 2.1",
     keywords: ['ohms law', 'equation', 'v=ir', 'formula', 'voltage', 'current', 'resistance', 'proportionality'],
-    content: "Ohm's Law states that the current (I) flowing through a conductor between two points is directly proportional to the voltage (V) across the two points and inversely proportional to the resistance (R). Mathematically expressed as V = I × R, or I = V / R, or R = V / I. In SI units: Voltage in Volts (V), Current in Amperes (A), and Resistance in Ohms (Ω)."
+    content: "Ohm's Law states that current (I) is directly proportional to applied voltage (V) and inversely proportional to resistance (R), expressed as V = I × R or I = V / R. In SI units: Voltage in Volts (V), Current in Amperes (A), and Resistance in Ohms (Ω)."
   },
   {
-    id: 'kb-theory-02',
-    title: 'Linearity and V-I Graph Slope',
-    category: 'THEORY',
-    source: "Experiment Guide: Ohmic Resistors & Linear Response",
-    keywords: ['v-i curve', 'graph', 'slope', 'linear', 'ohmic', 'straight line', 'plot'],
-    content: "For an ohmic resistor, plotting Voltage (V) on the x-axis against Current (I) on the y-axis yields a straight line passing through the origin (0,0). The slope of this line represents the conductance (1/R). Alternatively, if V is on the y-axis and I on the x-axis, the slope equals the resistance (R)."
-  },
-  {
-    id: 'kb-fault-01',
-    title: 'Open Circuit Fault Diagnosis & Physical Mechanics',
+    id: 'kb-ohms-02',
+    experimentId: 'ohms-law',
+    title: 'Open Circuit Discontinuity Diagnosis',
     category: 'TROUBLESHOOTING',
     source: "Lab Diagnostics Handbook: Circuit Continuity & Fault Patterns",
-    keywords: ['open circuit', 'fault', 'zero current', 'broken wire', 'infinite resistance', '0a', 'gap', 'switch open', 'diagnose', 'repair'],
-    content: "An open circuit occurs when there is a physical discontinuity in the conductive path (e.g. broken wire, burnt element, open switch). Because air has effectively infinite resistance, no electron flow can occur. Symptoms: Ammeter reads exactly 0.00 A regardless of applied voltage. Diagnosis: Measure continuity across terminals. Repair: Replace or re-connect the broken segment."
+    keywords: ['open circuit', 'zero current', 'broken wire', '0a', 'discontinuity', 'gap', 'switch open'],
+    content: "An open circuit occurs when there is a physical discontinuity in the conductive path (broken lead, open switch, disconnected terminal). Air has effectively infinite resistance, so current drops to exactly 0.00 A regardless of applied voltage."
   },
   {
-    id: 'kb-fault-02',
-    title: 'Ammeter Calibration & Meter Reading Errors',
+    id: 'kb-ohms-03',
+    experimentId: 'ohms-law',
+    title: 'Ammeter Calibration Systematic Error',
     category: 'FAULTS',
-    source: "Instrument Standards Bulletin: Ammeter Calibration Drift",
-    keywords: ['meter fault', 'calibration', 'ammeter error', 'measured vs theoretical', 'gain multiplier', 'reading wrong', 'miscalibrated'],
-    content: "A meter fault occurs when the ammeter's internal shunt resistor or digital gain amplifier drifts from standard calibration. Physical current in the circuit follows I = V / R, but the ammeter display scales the value erroneously (e.g., displaying 2.5× actual value). Diagnosis: Compare ammeter reading with theoretical I = V/R calculation or verify against a secondary calibrated multimeter."
+    source: "Instrument Standards Bulletin: Calibration Drift",
+    keywords: ['meter fault', 'calibration', 'ammeter error', 'measured vs theoretical', 'gain multiplier'],
+    content: "A meter fault occurs when the ammeter's internal gain amplifier or shunt drifts. Circuit physics remains normal (I_circuit = V/R), but the display scales erroneously (e.g. 2.5× actual current)."
+  },
+
+  // PENDULUM
+  {
+    id: 'kb-pend-01',
+    experimentId: 'gravity-pendulum',
+    title: 'Simple Pendulum Harmonic Period Model',
+    category: 'THEORY',
+    source: "Mechanics Manual: Simple Harmonic Oscillations",
+    keywords: ['pendulum', 'period', 'gravity', 'length', 'harmonic', 't=2pi*sqrt(l/g)'],
+    content: "For small oscillations (theta < 15 deg), a simple pendulum's period is T = 2*pi*sqrt(L/g). Period is independent of bob mass and amplitude. Plotting T^2 vs L yields slope = 4*pi^2 / g."
   },
   {
-    id: 'kb-safety-01',
-    title: 'Power Dissipation and Component Ratings',
-    category: 'SAFETY',
-    source: "Lab Safety Manual: Joule Heating & Power Ratings",
-    keywords: ['power', 'joule heating', 'watts', 'dissipation', 'overheat', 'safety', 'p=vi', 'i^2r'],
-    content: "When current flows through a resistor, electrical energy is converted to thermal energy (Joule heating) at rate P = V × I = I² × R = V² / R Watts (W). Always ensure the resistor's power rating is not exceeded to prevent component degradation or thermal damage."
+    id: 'kb-pend-02',
+    experimentId: 'gravity-pendulum',
+    title: 'Planetary Gravitational Field Comparison',
+    category: 'THEORY',
+    source: "Astrophysics Guide: Planetary Surface Gravity",
+    keywords: ['moon gravity', 'jupiter gravity', 'mars gravity', '1.62', '24.79'],
+    content: "Gravitational acceleration g varies across celestial bodies: Earth (9.81 m/s²), Moon (1.62 m/s²), Mars (3.71 m/s²), Jupiter (24.79 m/s²). Lower gravity (Moon) causes slower oscillations (longer period)."
   },
+
+  // PHOTOELECTRIC EFFECT
   {
-    id: 'kb-equip-01',
-    title: 'Virtual Apparatus & Circuit Topology',
-    category: 'EQUIPMENT',
-    source: "LabVerse Apparatus Guide: Series Circuit Assembly",
-    keywords: ['battery', 'ammeter', 'resistor', 'wires', 'series', 'circuit setup', 'apparatus'],
-    content: "The Ohm's Law laboratory setup places a variable DC voltage source, a precision resistor, and a digital ammeter in series. An ideal ammeter has negligible internal resistance (0 Ω) so that it measures circuit current without dropping significant voltage."
+    id: 'kb-photo-01',
+    experimentId: 'photoelectric-effect',
+    title: 'Einstein Photoelectric Equation & Stopping Potential',
+    category: 'THEORY',
+    source: "Quantum Physics Text: Photoelectric Quanta Section 4.2",
+    keywords: ['photoelectric', 'planck', 'stopping potential', 'work function', 'photon energy', 'e=h*nu'],
+    content: "Einstein photoelectric law states K_max = h*nu - Phi. Photon energy E = h*nu = hc/lambda must exceed metal work function Phi for emission. Stopping potential V0 halts photoelectrons: e*V0 = K_max."
   }
 ];
 
-export function retrieveRelevantChunks(query: string, limit = 3): RAGChunk[] {
+export function retrieveRelevantChunks(query: string, experimentId?: string, limit = 3): RAGChunk[] {
   const normalized = query.toLowerCase();
   const queryTokens = normalized.split(/\W+/).filter(t => t.length > 2);
 
-  const scored = OHMS_LAW_KNOWLEDGE_BASE.map(chunk => {
+  const scored = COMPREHENSIVE_KNOWLEDGE_BASE.map(chunk => {
     let score = 0;
+
+    // Prioritize chunks belonging to active experiment
+    if (experimentId && chunk.experimentId === experimentId) {
+      score += 10;
+    }
+
     // Check keyword matches
     chunk.keywords.forEach(kw => {
-      if (normalized.includes(kw)) score += 5;
+      if (normalized.includes(kw)) score += 6;
     });
 
     // Check title matches
@@ -75,10 +92,12 @@ export function retrieveRelevantChunks(query: string, limit = 3): RAGChunk[] {
 
   scored.sort((a, b) => b.score - a.score);
 
-  // Return top matches or default theory chunks if score is low
   const results = scored.filter(s => s.score > 0).map(s => s.chunk);
   if (results.length === 0) {
-    return OHMS_LAW_KNOWLEDGE_BASE.slice(0, limit);
+    if (experimentId) {
+      return COMPREHENSIVE_KNOWLEDGE_BASE.filter(c => c.experimentId === experimentId).slice(0, limit);
+    }
+    return COMPREHENSIVE_KNOWLEDGE_BASE.slice(0, limit);
   }
   return results.slice(0, limit);
 }

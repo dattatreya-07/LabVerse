@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TutorRequest, TutorResponse, TutorSource } from '@/types';
+import { TutorRequest, TutorResponse, SourceReference } from '@/types';
 import { retrieveRelevantChunks } from '@/lib/ai/rag';
+import { getExperiment } from '@/lib/experiments/registry';
 
 export async function POST(req: NextRequest) {
   try {
     const body: TutorRequest = await req.json();
-    const { question, circuitInput, lastResult } = body;
+    const { question, experimentId, components, connections, parameters, latestResult, activeFaults } = body;
 
     if (!question || typeof question !== 'string' || question.trim().length === 0) {
       return NextResponse.json(
@@ -15,35 +16,49 @@ export async function POST(req: NextRequest) {
     }
 
     const trimmedQuestion = question.trim();
-    const chunks = retrieveRelevantChunks(trimmedQuestion, 3);
-    const sources: TutorSource[] = chunks.map(c => ({
+    const expDef = getExperiment(experimentId || 'ohms-law');
+    const chunks = retrieveRelevantChunks(trimmedQuestion, expDef.id, 3);
+    
+    const sources: SourceReference[] = chunks.map(c => ({
+      id: c.id,
       title: c.title,
-      source: c.source,
+      section: c.category,
+      sourceType: 'Reviewed Lab Manual',
       excerpt: c.content.slice(0, 160) + '...',
     }));
 
-    const groqApiKey = process.env.GROQ_API_KEY;
+    // Build context string from active laboratory workspace state
+    const compSummary = components ? components.map(c => `${c.title} (pos: ${c.position.x},${c.position.y})`).join(', ') : 'Default Setup';
+    const connCount = connections ? connections.length : 0;
+    const measSummary = latestResult?.measurements
+      ? latestResult.measurements.map(m => `${m.label}: Theo=${m.theoreticalValue} ${m.unit}, Obs=${m.observedValue} ${m.unit}`).join('; ')
+      : 'No measurements yet';
 
-    // Build context string from current circuit state
-    const stateContext = lastResult
-      ? `[Current Circuit State: Voltage=${lastResult.voltage}V, Resistance=${lastResult.resistance}Ω, Theoretical Current=${lastResult.theoreticalCurrent}A, Measured Current=${lastResult.measuredCurrent}A, Active Fault=${lastResult.faultType}${lastResult.faultExplanation ? ` (${lastResult.faultExplanation})` : ''}]`
-      : circuitInput
-      ? `[Input Parameters: Voltage=${circuitInput.voltage}V, Resistance=${circuitInput.resistance}Ω, Fault=${circuitInput.faultType}]`
-      : '[No active experiment data run yet]';
+    const stateContext = `[Experiment: ${expDef.title}]
+[Domain: ${expDef.domain}]
+[Workspace Components: ${compSummary}]
+[Connections count: ${connCount}]
+[Parameters: ${JSON.stringify(parameters || {})}]
+[Active Faults: ${activeFaults?.join(', ') || 'None'}]
+[Latest Simulation Measurements: ${measSummary}]
+[Circuit Topology: ${latestResult?.topology?.circuitTopology || 'N/A'}]
+[Topology Message: ${latestResult?.topology?.message || 'N/A'}]`;
+
+    const groqApiKey = process.env.GROQ_API_KEY;
 
     if (groqApiKey) {
       try {
         const ragContextText = chunks.map((c, idx) => `[Source ${idx + 1}: ${c.title}]\n${c.content}`).join('\n\n');
         
-        const systemPrompt = `You are LabVerse AI Tutor, an expert physics & electrical engineering laboratory assistant.
-You answer student questions about Ohm's Law (V = IR), circuit behavior, and fault troubleshooting.
-Base your response on the provided live circuit state and retrieved lab knowledge sources below.
-Be concise, clear, encouraging, and mathematically accurate.
+        const systemPrompt = `You are LabVerse AI Diagnostic Tutor, an expert laboratory assistant for ${expDef.title}.
+Analyze the student's question against the live virtual laboratory state and verified knowledge base below.
+Encourage scientific reasoning, explain discrepancies between theoretical and observed measurements, diagnose faults, and offer actionable laboratory hints.
+Never invent or fabricate measurements; always refer to the actual simulated values.
 
-Live Circuit State:
+Live Laboratory State:
 ${stateContext}
 
-Retrieved Knowledge Base Context:
+Retrieved Grounded Knowledge:
 ${ragContextText}`;
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -83,7 +98,7 @@ ${ragContextText}`;
     }
 
     // Fallback: Generate curated response from RAG index & current lab state
-    const fallbackAnswer = generateCuratedResponse(trimmedQuestion, stateContext, chunks, lastResult);
+    const fallbackAnswer = generateCuratedResponse(trimmedQuestion, expDef, latestResult, activeFaults);
 
     const tutorResp: TutorResponse = {
       answer: fallbackAnswer,
@@ -106,66 +121,51 @@ ${ragContextText}`;
 
 function generateCuratedResponse(
   q: string,
-  stateCtx: string,
-  chunks: Array<{ title: string; content: string }>,
-  lastResult?: import('@/types').SimulationResult | null
+  expDef: import('@/types').ExperimentDefinition,
+  latestResult?: import('@/types').SimulationResult | null,
+  activeFaults?: string[]
 ): string {
   const lower = q.toLowerCase();
 
-  if (lastResult?.faultType === 'OPEN_CIRCUIT' && (lower.includes('zero') || lower.includes('0a') || lower.includes('why') || lower.includes('fault') || lower.includes('current'))) {
-    return `### 🔍 Open Circuit Fault Analysis
-Currently, your circuit has an **Open Circuit Fault** active.
+  // Fault 1: Open circuit
+  if (activeFaults?.includes('FAULT_OPEN_CIRCUIT') || latestResult?.topology?.circuitTopology === 'OPEN') {
+    return `### 🔍 Open Circuit Discontinuity Diagnosis
+Currently, the circuit has an **Open Circuit Discontinuity**.
 
-- **Applied Voltage:** ${lastResult.voltage} V
-- **Set Resistance:** ${lastResult.resistance} Ω
-- **Theoretical Current ($I = V/R$):** ${lastResult.theoreticalCurrent} A
-- **Actual Measured Current:** **0.00 A**
+- **Theoretical Current:** ${latestResult?.measurements.find(m => m.id === 'current_meas')?.theoreticalValue ?? '0.30'} A
+- **Observed Ammeter Reading:** **0.00 A**
 
-**Why is the current zero?**
-An open circuit means the conductive copper pathway is physically broken or disconnected (like a switch left open). Air has an extremely high electrical resistance ($R \\approx \\infty$), preventing electron movement across the gap.
+**Why is current zero?**
+An open circuit means the conductive pathway is broken or a switch is open. Air has effectively infinite resistance ($R \\approx \\infty$), so no electrons can flow through the loop.
 
-**How to repair:** Switch the fault mode back to **Normal Circuit** or reconnect the wire junction in the controls panel.`;
+**Actionable Fix:** Close the knife switch or verify that all wires form an unbroken loop from Battery (+) to Resistor to Ammeter back to Battery (-).`;
   }
 
-  if (lastResult?.faultType === 'METER_FAULT' && (lower.includes('wrong') || lower.includes('meter') || lower.includes('incorrect') || lower.includes('fault') || lower.includes('calibration') || lower.includes('different'))) {
-    return `### ⚠️ Ammeter Calibration Fault Analysis
-Your ammeter is currently reporting an erroneous value due to an **Ammeter Calibration Fault**.
+  // Fault 2: Meter calibration error
+  if (activeFaults?.includes('FAULT_METER_CALIBRATION')) {
+    const theoI = latestResult?.measurements.find(m => m.id === 'current_meas')?.theoreticalValue ?? 0.30;
+    const obsI = latestResult?.measurements.find(m => m.id === 'current_meas')?.observedValue ?? 0.75;
+    return `### ⚠️ Ammeter Calibration Drift Diagnosis
+The ammeter is exhibiting an **Instrumental Systematic Calibration Error**.
 
-- **Applied Voltage:** ${lastResult.voltage} V
-- **Set Resistance:** ${lastResult.resistance} Ω
-- **Theoretical Physical Current ($I = V/R$):** ${lastResult.theoreticalCurrent} A
-- **Meter Display Reading:** **${lastResult.measuredCurrent} A**
+- **Physical Circuit Current ($I = V/R$):** ${theoI} A
+- **Ammeter Display Reading:** **${obsI} A**
 
 **Diagnosis:**
-The physical current flowing through the resistor is actually **${lastResult.theoreticalCurrent} A**. However, the instrument's internal gain amplifier is miscalibrated by **2.5×** (+150% gain offset). This represents an **instrumental systematic error**.
+The physical current in the wire is actually **${theoI} A**, but the instrument's internal amplifier gain is offset by **+150% (2.5× multiplier)**. This represents an instrumental error, not a failure of physical law.
 
-**Key Takeaway:** Always verify meter readings against theoretical expectations ($I = V/R$) when troubleshooting hardware!`;
+**Key Takeaway:** Always cross-reference instrument readings against theoretical physics models ($I = V/R$).`;
   }
 
-  if (lower.includes('v=ir') || lower.includes('formula') || lower.includes('equation') || lower.includes('calculate') || lower.includes('theory')) {
-    const v = lastResult ? lastResult.voltage : 6;
-    const r = lastResult ? lastResult.resistance : 20;
-    const i = (v / r).toFixed(3);
-    return `### 📘 Ohm's Law Mathematical Formula
-Ohm's Law expresses the fundamental relationship between Voltage ($V$), Current ($I$), and Resistance ($R$):
+  // General Theory & Formula Explanation
+  return `### 💡 ${expDef.title} Guidance
 
-$$\\text{Current } (I) = \\frac{\\text{Voltage } (V)}{\\text{Resistance } (R)}$$
+${expDef.theory.corePrinciple}
 
-**With your active laboratory inputs:**
-- $V = ${v}\\text{ V}$
-- $R = ${r}\\ \\Omega$
-- $I = \\frac{${v}\\text{ V}}{${r}\\ \\Omega} = ${i}\\text{ A}$ (${(parseFloat(i) * 1000).toFixed(1)}\\text{ mA})$
+**Governing Formula:**
+$$\n${expDef.report.governingFormulaLatex}\n$$
 
-Increase voltage or decrease resistance to see the current rise proportionally!`;
-  }
+${latestResult ? `**Active Measurements:**\n` + latestResult.measurements.map(m => `- **${m.label}:** ${m.observedValue} ${m.unit} (Theoretical: ${m.theoreticalValue} ${m.unit})`).join('\n') : '*Tip: Click Run Experiment to record your first measurement.*'}
 
-  // General answer based on top retrieved knowledge chunk
-  const topChunk = chunks[0];
-  return `### 💡 ${topChunk ? topChunk.title : "Ohm's Law Virtual Lab Guidance"}
-
-${topChunk ? topChunk.content : "In an electrical circuit obeying Ohm's Law, current increases linearly with applied voltage ($I \\propto V$) and decreases inversely with resistance ($I \\propto 1/R$)."}
-
-${stateCtx}
-
-*Note: Server is currently operating in offline curated knowledge mode. For full custom LLM reasoning, configure \`GROQ_API_KEY\` in environment settings.*`;
+*Note: Server is operating in offline curated grounded knowledge mode. Set \`GROQ_API_KEY\` in environment settings for live LLM reasoning.*`;
 }

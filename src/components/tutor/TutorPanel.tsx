@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CircuitInput, SimulationResult, TutorResponse, TutorSource } from '@/types';
+import { ExperimentDefinition, LabComponent, WireConnection, SimulationResult, TutorResponse, SourceReference } from '@/types';
 import { Bot, Send, User, Sparkles, BookOpen, RotateCcw, Loader2 } from 'lucide-react';
 
 interface TutorPanelProps {
-  currentInput: CircuitInput;
+  experiment: ExperimentDefinition;
+  components: LabComponent[];
+  connections: WireConnection[];
+  parameters: Record<string, number>;
+  activeFaults: string[];
   lastResult: SimulationResult | null;
-  activeStep?: number;
   theme?: 'dark' | 'light';
 }
 
@@ -15,15 +18,18 @@ interface ChatMessage {
   id: string;
   sender: 'user' | 'tutor';
   text: string;
-  sources?: TutorSource[];
+  sources?: SourceReference[];
   isCuratedFallback?: boolean;
   timestamp: string;
 }
 
 export const TutorPanel: React.FC<TutorPanelProps> = ({
-  currentInput,
+  experiment,
+  components,
+  connections,
+  parameters,
+  activeFaults,
   lastResult,
-  activeStep,
   theme = 'dark',
 }) => {
   const isDark = theme === 'dark';
@@ -32,7 +38,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
     {
       id: 'welcome-1',
       sender: 'tutor',
-      text: `Hello! I am your **LabVerse AI Tutor**. I analyze your live Ohm's Law circuit state ($V=${currentInput.voltage}\\text{V}, R=${currentInput.resistance}\\ \\Omega$) and help you troubleshoot faults, understand equation mechanics, and interpret V-I graphs.\n\nAsk me anything or select a diagnostic quick prompt below!`,
+      text: `Hello! I am your **LabVerse AI Diagnostic Tutor** for **${experiment.title}**.\n\nI analyze your live laboratory workspace, wire connections, parameters, and simulated measurements in real time. Ask me anything or select a diagnostic quick prompt below!`,
       isCuratedFallback: true,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
@@ -41,10 +47,10 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const quickPrompts = [
-    { label: "Why is current 0A?", query: "Why is my measured current zero even though voltage is applied?" },
-    { label: "Is ammeter accurate?", query: "Why is the ammeter display reading different from theoretical V/R?" },
-    { label: "Calculate expected I", query: `Calculate the theoretical current for V=${currentInput.voltage}V and R=${currentInput.resistance}Ω.` },
-    { label: "Explain V=IR slope", query: "Explain how the slope of the V-I curve relates to resistance." },
+    { label: "Why is measurement 0?", query: "Why is the observed measurement zero or not flowing?" },
+    { label: "Is reading accurate?", query: "Is the current measured instrument reading consistent with theoretical calculations?" },
+    { label: "Explain governing equation", query: `Explain how the governing equation applies to my active inputs.` },
+    { label: "Check circuit wiring", query: "Can you analyze my component placement and wire connections for any errors?" },
   ];
 
   const handleSend = async (queryText?: string) => {
@@ -68,10 +74,12 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: textToSend,
-          experimentId: 'ohms-law',
-          currentStep: activeStep,
-          circuitInput: currentInput,
-          lastResult: lastResult,
+          experimentId: experiment.id,
+          components,
+          connections,
+          parameters,
+          activeFaults,
+          latestResult: lastResult,
         }),
       });
 
@@ -108,12 +116,10 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
 
   return (
     <div className={`rounded-2xl border p-5 space-y-4 shadow-xl flex flex-col h-[640px] transition-colors ${
-      isDark
-        ? 'bg-slate-900 border-slate-800'
-        : 'bg-white border-slate-200/90 shadow-slate-200/60'
+      isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-slate-200/50'
     }`}>
       
-      {/* Tutor Panel Header */}
+      {/* Header */}
       <div className={`flex items-center justify-between border-b pb-3 shrink-0 ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}>
@@ -123,7 +129,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
           </div>
           <div>
             <h3 className={`text-sm font-bold flex items-center space-x-1.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              <span>LabVerse AI Tutor</span>
+              <span>LabVerse AI Diagnostic Tutor</span>
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                 isDark ? 'bg-cyan-950 text-cyan-400 border-cyan-800' : 'bg-cyan-50 text-cyan-700 border-cyan-300'
               }`}>
@@ -131,7 +137,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
               </span>
             </h3>
             <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Context-Aware Circuit Diagnostics & Physics Assistant
+              Context: {experiment.title} ({experiment.domain})
             </p>
           </div>
         </div>
@@ -147,7 +153,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
         </button>
       </div>
 
-      {/* Quick Diagnostic Prompts Bar */}
+      {/* Quick Prompts Bar */}
       <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 shrink-0 scrollbar-none">
         <span className={`text-[10px] font-semibold uppercase tracking-wider shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
           Prompts:
@@ -222,7 +228,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
                           isDark ? 'bg-slate-900 border-slate-850' : 'bg-white border-slate-200'
                         }`}>
                           <p className="font-semibold text-cyan-600 dark:text-cyan-300">{src.title}</p>
-                          <p className={`italic text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{src.source}</p>
+                          <p className={`italic text-[9px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{src.excerpt}</p>
                         </div>
                       ))}
                     </div>
@@ -244,12 +250,12 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
             isDark ? 'text-indigo-400 bg-slate-950 border-indigo-900/40' : 'text-indigo-700 bg-indigo-50 border-indigo-200'
           }`}>
             <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-            <span>Searching grounded vector knowledge & generating diagnosis...</span>
+            <span>Searching grounded vector knowledge & diagnosing laboratory state...</span>
           </div>
         )}
       </div>
 
-      {/* Input Box Bar */}
+      {/* Input Form Bar */}
       <div className={`pt-2 shrink-0 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
         <form
           onSubmit={(e) => {
@@ -262,7 +268,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask AI tutor about circuit behavior or faults..."
+            placeholder="Ask AI tutor about your circuit setup, equations, or faults..."
             disabled={isLoading}
             className={`flex-1 px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-cyan-500 transition-all ${
               isDark

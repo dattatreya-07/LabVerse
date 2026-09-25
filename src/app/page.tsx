@@ -2,40 +2,37 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/nav/Header';
-import { Dashboard } from '@/components/dashboard/Dashboard';
-import { ExperimentPrep } from '@/components/lab/ExperimentPrep';
-import { CircuitSVG } from '@/components/lab/CircuitSVG';
-import { LabControls } from '@/components/lab/LabControls';
-import { LiveReadings } from '@/components/lab/LiveReadings';
-import { ObservationsTable } from '@/components/lab/ObservationsTable';
-import { ResultsChart } from '@/components/lab/ResultsChart';
+import { ExperimentCatalog } from '@/components/catalog/ExperimentCatalog';
+import { ExperimentPrep } from '@/components/prep/ExperimentPrep';
+import { LabWorkbench } from '@/components/workspace/LabWorkbench';
+import { ObservationLog } from '@/components/analysis/ObservationLog';
+import { AnalysisChart } from '@/components/analysis/AnalysisChart';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { ReportView } from '@/components/report/ReportView';
 
-import { SessionState, CircuitInput, FaultType, ObservationRecord, FaultLogEntry } from '@/types';
-import { loadSession, saveSession, clearSession, DEFAULT_INPUT } from '@/lib/session/storage';
-import { runSimulation } from '@/lib/simulation/engine';
-import { Bot, Play } from 'lucide-react';
+import { ExperimentSession, ExperimentDefinition, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
+import { getExperiment, ohmsLawExperiment } from '@/lib/experiments/registry';
+import { loadExperimentSession, saveExperimentSession, clearExperimentSession } from '@/lib/session/storage';
 
 export default function Home() {
-  const [session, setSession] = useState<SessionState | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'prep' | 'lab' | 'tutor' | 'report'>('dashboard');
-  const [input, setInput] = useState<CircuitInput>(DEFAULT_INPUT);
+  const [selectedExpId, setSelectedExpId] = useState<string>('ohms-law');
+  const [currentExperiment, setCurrentExperiment] = useState<ExperimentDefinition>(ohmsLawExperiment);
+  const [session, setSession] = useState<ExperimentSession | null>(null);
+  const [activeTab, setActiveTab] = useState<'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report'>('lab');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Load session & theme preference from localStorage on mount
   useEffect(() => {
-    const loaded = loadSession();
+    const exp = getExperiment(selectedExpId);
+    setCurrentExperiment(exp);
+    const loaded = loadExperimentSession(selectedExpId, 'GUIDED');
     setSession(loaded);
-    if (loaded.currentInput) {
-      setInput(loaded.currentInput);
-    }
 
     const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setTheme(savedTheme);
     }
-  }, []);
+  }, [selectedExpId]);
 
   const handleToggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -43,88 +40,202 @@ export default function Home() {
     localStorage.setItem('labverse_theme', nextTheme);
   };
 
+  const handleSelectExperiment = (expId: string) => {
+    setSelectedExpId(expId);
+    const exp = getExperiment(expId);
+    setCurrentExperiment(exp);
+    const loaded = loadExperimentSession(expId, 'GUIDED');
+    setSession(loaded);
+    setActiveTab('prep');
+  };
+
   if (!session) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center font-sans">
-        <div className="animate-pulse text-sm text-cyan-400 font-mono">Initializing LabVerse Virtual Engine...</div>
+        <div className="animate-pulse text-sm text-cyan-400 font-mono">Initializing LabVerse Modular Engine...</div>
       </div>
     );
   }
 
   const isDark = theme === 'dark';
 
-  const updateSessionState = (newSession: SessionState) => {
+  const updateSessionState = (newSession: ExperimentSession) => {
     setSession(newSession);
-    saveSession(newSession);
+    saveExperimentSession(newSession);
+  };
+
+  const handleUpdateComponents = (comps: LabComponent[]) => {
+    const updated = {
+      ...session,
+      components: comps,
+    };
+    updateSessionState(updated);
+  };
+
+  const handleUpdateConnections = (conns: WireConnection[]) => {
+    const updated = {
+      ...session,
+      connections: conns,
+    };
+    updateSessionState(updated);
+  };
+
+  const handleParameterChange = (paramId: string, value: number) => {
+    const nextParams = {
+      ...session.parameters,
+      [paramId]: value,
+    };
+
+    // If components on board have matching property, sync them
+    const nextComps = session.components.map(c => {
+      if (paramId === 'voltage' && (c.type === 'BATTERY' || c.type === 'DC_SUPPLY')) {
+        return { ...c, properties: { ...c.properties, voltage: value } };
+      }
+      if (paramId === 'resistance' && (c.type === 'RESISTOR' || c.type === 'VARIABLE_RESISTOR')) {
+        return { ...c, properties: { ...c.properties, resistance: value } };
+      }
+      return c;
+    });
+
+    const updated = {
+      ...session,
+      parameters: nextParams,
+      components: nextComps,
+    };
+    updateSessionState(updated);
+  };
+
+  const handleToggleFault = (faultId: string) => {
+    const activeFaults = session.activeFaults.includes(faultId)
+      ? session.activeFaults.filter(f => f !== faultId)
+      : [...session.activeFaults, faultId];
+
+    const faultDef = currentExperiment.faults?.find(f => f.id === faultId);
+    const action = session.activeFaults.includes(faultId) ? 'REPAIRED' : 'INJECTED';
+
+    const logEntry: FaultLogEntry = {
+      id: `fault-${Date.now()}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      faultId,
+      faultTitle: faultDef?.title || faultId,
+      action,
+      details: faultDef?.description || `Fault state updated: ${action}`,
+    };
+
+    const updated = {
+      ...session,
+      activeFaults,
+      faultLog: [logEntry, ...session.faultLog],
+    };
+    updateSessionState(updated);
+  };
+
+  const handleChangeMode = (mode: LearningMode) => {
+    updateSessionState({
+      ...session,
+      mode,
+    });
   };
 
   const handleRunSimulation = () => {
     try {
-      const result = runSimulation(input);
-      
+      const simInput = {
+        experimentId: currentExperiment.id,
+        components: session.components,
+        connections: session.connections,
+        parameters: session.parameters,
+        activeFaults: session.activeFaults,
+      };
+
+      const result = currentExperiment.simulate(simInput);
+
+      // Create empirical observation record
+      const measMap: Record<string, number> = {};
+      const theoMap: Record<string, number> = {};
+
+      result.measurements.forEach(m => {
+        measMap[m.id] = m.observedValue;
+        theoMap[m.id] = m.theoreticalValue;
+      });
+
       const newObs: ObservationRecord = {
         id: `obs-${Date.now()}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        voltage: result.voltage,
-        resistance: result.resistance,
-        theoreticalCurrent: result.theoreticalCurrent,
-        measuredCurrent: result.measuredCurrent,
-        faultType: result.faultType,
-        notes: result.faultExplanation || 'Normal measurement run',
+        runIndex: session.observations.length + 1,
+        parameters: { ...session.parameters },
+        measurements: measMap,
+        theoreticalValues: theoMap,
+        faultsActive: [...session.activeFaults],
+        circuitTopology: result.topology.circuitTopology,
+        notes: result.topology.message,
       };
 
-      const updatedSession: SessionState = {
+      const updated = {
         ...session,
-        currentInput: input,
         lastResult: result,
         observations: [newObs, ...session.observations],
       };
-
-      updateSessionState(updatedSession);
+      updateSessionState(updated);
     } catch (err) {
       console.error('Simulation execution error:', err);
     }
   };
 
-  const handleInjectFault = (fault: FaultType) => {
-    const newInput: CircuitInput = { ...input, faultType: fault };
-    setInput(newInput);
+  const handleStopSimulation = () => {
+    if (session.lastResult) {
+      const halted = {
+        ...session.lastResult,
+        visualState: {
+          ...session.lastResult.visualState,
+          isOperating: false,
+          electronVelocity: 0,
+        },
+      };
+      updateSessionState({
+        ...session,
+        lastResult: halted,
+      });
+    }
+  };
 
-    const result = runSimulation(newInput);
+  const handleResetToPreset = () => {
+    const defaultPreset = currentExperiment.workspace.defaultPreset;
+    if (defaultPreset) {
+      const resetComps = defaultPreset.components.map(c => ({ ...c }));
+      const resetConns = defaultPreset.connections.map(w => ({ ...w }));
+      updateSessionState({
+        ...session,
+        components: resetComps,
+        connections: resetConns,
+      });
+    }
+  };
 
-    const logEntry: FaultLogEntry = {
-      id: `fault-${Date.now()}`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      faultType: fault,
-      action: fault === 'NORMAL' ? 'REPAIRED' : 'INJECTED',
-      details: result.faultExplanation || `Fault mode changed to ${fault}`,
-    };
-
-    const updatedSession: SessionState = {
+  const handleClearCanvas = () => {
+    updateSessionState({
       ...session,
-      currentInput: newInput,
-      lastResult: result,
-      faultLog: [logEntry, ...session.faultLog],
-    };
-
-    updateSessionState(updatedSession);
+      components: [],
+      connections: [],
+    });
   };
 
   const handleResetControls = () => {
-    setInput(DEFAULT_INPUT);
-    const result = runSimulation(DEFAULT_INPUT);
+    const defaultParams: Record<string, number> = {};
+    currentExperiment.parameters.forEach(p => {
+      defaultParams[p.id] = p.defaultValue;
+    });
+
     updateSessionState({
       ...session,
-      currentInput: DEFAULT_INPUT,
-      lastResult: result,
+      parameters: defaultParams,
+      activeFaults: [],
     });
   };
 
   const handleResetSession = () => {
-    if (window.confirm('Reset lab session? All observations and fault logs will be cleared.')) {
-      const fresh = clearSession();
+    if (window.confirm(`Reset ${currentExperiment.title} session? All recorded data and apparatus positions will be restored to defaults.`)) {
+      const fresh = clearExperimentSession(currentExperiment.id);
       setSession(fresh);
-      setInput(fresh.currentInput);
     }
   };
 
@@ -160,13 +271,13 @@ export default function Home() {
       isDark ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900'
     }`}>
       
-      {/* Top Fixed Navigation */}
+      {/* Top Header Navigation */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         session={session}
+        experiment={currentExperiment}
         onResetSession={handleResetSession}
-        activeFault={input.faultType}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
@@ -174,20 +285,18 @@ export default function Home() {
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* TAB 1: DASHBOARD */}
-        {activeTab === 'dashboard' && (
-          <Dashboard
-            session={session}
-            onStartLab={() => setActiveTab('lab')}
-            onOpenPrep={() => setActiveTab('prep')}
-            onOpenReport={() => setActiveTab('report')}
+        {/* TAB 1: EXPERIMENT CATALOG */}
+        {activeTab === 'catalog' && (
+          <ExperimentCatalog
+            onSelectExperiment={handleSelectExperiment}
             theme={theme}
           />
         )}
 
-        {/* TAB 2: PREPARATION & THEORY */}
+        {/* TAB 2: THEORY & PREPARATION */}
         {activeTab === 'prep' && (
           <ExperimentPrep
+            experiment={currentExperiment}
             completedSteps={session.completedSteps || []}
             onToggleStep={handleToggleStep}
             onGoToLab={() => setActiveTab('lab')}
@@ -197,121 +306,81 @@ export default function Home() {
 
         {/* TAB 3: VIRTUAL LABORATORY WORKSPACE */}
         {activeTab === 'lab' && (
-          <div className="space-y-6 pb-12">
-            
-            {/* Top Workspace Bar */}
-            <div className={`flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border transition-colors ${
-              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}>
-              <div>
-                <h1 className={`text-lg font-bold flex items-center space-x-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                  <Play className="w-4 h-4 text-cyan-500 fill-cyan-500/20" />
-                  <span>Ohm's Law Virtual Circuit Workspace</span>
-                </h1>
-                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Adjust voltage and resistance, run simulation, inspect waveforms, inject fault anomalies.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setActiveTab('tutor')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center space-x-1.5 ${
-                  isDark
-                    ? 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border-indigo-500/40'
-                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border-indigo-300'
-                }`}
-              >
-                <Bot className="w-4 h-4 text-indigo-500" />
-                <span>Ask AI Tutor</span>
-              </button>
-            </div>
-
-            {/* Live Meter Gauges Bar */}
-            <LiveReadings result={session.lastResult} theme={theme} />
-
-            {/* Split Grid: Left Circuit SVG & Chart, Right Controls */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Left Column (2/3): Interactive Circuit SVG & V-I Linearity Chart */}
-              <div className="lg:col-span-2 space-y-6">
-                <CircuitSVG input={input} result={session.lastResult} theme={theme} />
-                <ResultsChart observations={session.observations} currentResistance={input.resistance} theme={theme} />
-                <ObservationsTable
-                  observations={session.observations}
-                  onDeleteObservation={handleDeleteObservation}
-                  onClearObservations={handleClearObservations}
-                  theme={theme}
-                />
-              </div>
-
-              {/* Right Column (1/3): Lab Controls & Quick Diagnostics */}
-              <div className="space-y-6">
-                <LabControls
-                  input={input}
-                  onChangeInput={(newIn) => setInput(newIn)}
-                  onRunSimulation={handleRunSimulation}
-                  onResetControls={handleResetControls}
-                  onInjectFault={handleInjectFault}
-                  theme={theme}
-                />
-
-                {/* AI Diagnostic Quick Widget */}
-                <div className={`p-5 rounded-2xl border space-y-3 transition-colors ${
-                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 flex items-center space-x-1.5">
-                      <Bot className="w-4 h-4 text-indigo-500" />
-                      <span>Troubleshooting Assistant</span>
-                    </h4>
-                    <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold">Active</span>
-                  </div>
-
-                  <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                    Experiencing unexpected current readings or zero electron flow? Let the grounded AI tutor analyze your circuit data.
-                  </p>
-
-                  <button
-                    onClick={() => setActiveTab('tutor')}
-                    className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-slate-100 font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2"
-                  >
-                    <Bot className="w-4 h-4" />
-                    <span>Open AI Tutor Diagnostic Panel</span>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
+          <LabWorkbench
+            experiment={currentExperiment}
+            components={session.components}
+            connections={session.connections}
+            parameters={session.parameters}
+            activeFaults={session.activeFaults}
+            mode={session.mode}
+            lastResult={session.lastResult}
+            onUpdateComponents={handleUpdateComponents}
+            onUpdateConnections={handleUpdateConnections}
+            onParameterChange={handleParameterChange}
+            onToggleFault={handleToggleFault}
+            onChangeMode={handleChangeMode}
+            onRunSimulation={handleRunSimulation}
+            onStopSimulation={handleStopSimulation}
+            onResetToPreset={handleResetToPreset}
+            onClearCanvas={handleClearCanvas}
+            onResetControls={handleResetControls}
+            onOpenTutor={() => setActiveTab('tutor')}
+            theme={theme}
+          />
         )}
 
-        {/* TAB 4: AI TUTOR PANEL */}
-        {activeTab === 'tutor' && (
-          <div className="max-w-4xl mx-auto">
-            <TutorPanel
-              currentInput={input}
-              lastResult={session.lastResult}
-              activeStep={session.completedSteps?.[session.completedSteps.length - 1] || 1}
+        {/* TAB 4: DATA & PLOTS */}
+        {activeTab === 'analysis' && (
+          <div className="space-y-6 pb-12">
+            <AnalysisChart
+              observations={session.observations}
+              analysis={currentExperiment.analysis}
+              theme={theme}
+            />
+
+            <ObservationLog
+              observations={session.observations}
+              parameters={currentExperiment.parameters}
+              onDeleteObservation={handleDeleteObservation}
+              onClearObservations={handleClearObservations}
               theme={theme}
             />
           </div>
         )}
 
-        {/* TAB 5: PDF REPORT PREVIEW & EXPORT */}
+        {/* TAB 5: AI TUTOR PANEL */}
+        {activeTab === 'tutor' && (
+          <div className="max-w-4xl mx-auto">
+            <TutorPanel
+              experiment={currentExperiment}
+              components={session.components}
+              connections={session.connections}
+              parameters={session.parameters}
+              activeFaults={session.activeFaults}
+              lastResult={session.lastResult}
+              theme={theme}
+            />
+          </div>
+        )}
+
+        {/* TAB 6: OFFICIAL PDF REPORT */}
         {activeTab === 'report' && (
-          <ReportView session={session} theme={theme} />
+          <ReportView
+            session={session}
+            experiment={currentExperiment}
+            theme={theme}
+          />
         )}
 
       </main>
 
-      {/* Footer */}
+      {/* Global Footer */}
       <footer className={`border-t py-6 text-center text-xs transition-colors ${
         isDark ? 'border-slate-900 bg-slate-950 text-slate-500' : 'border-slate-200 bg-white text-slate-500'
       }`}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>LabVerse AI Virtual Laboratory System • Phase 1 MVP</span>
-          <span className="font-mono text-[11px] opacity-70">Built with Next.js 16, TypeScript, Tailwind CSS & Recharts</span>
+          <span>LabVerse Modular Experiment Platform • Phase 1 & 2 Platform Architecture</span>
+          <span className="font-mono text-[11px] opacity-70">Next.js 16 • React 19 • TypeScript • Tailwind v4 • Recharts • jsPDF</span>
         </div>
       </footer>
 

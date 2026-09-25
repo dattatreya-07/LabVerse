@@ -1,21 +1,21 @@
 'use client';
 
 import React from 'react';
-import { SessionState } from '@/types';
-import { generatePDFReport } from '@/lib/report/pdf-generator';
-import { formatCurrent } from '@/lib/simulation/engine';
+import { ExperimentSession, ExperimentDefinition } from '@/types';
+import { generateGenericPDFReport } from '@/lib/report/pdf-generator';
 import { FileText, Download, ShieldCheck, AlertTriangle, Cpu } from 'lucide-react';
 
 interface ReportViewProps {
-  session: SessionState;
+  session: ExperimentSession;
+  experiment: ExperimentDefinition;
   theme?: 'dark' | 'light';
 }
 
-export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' }) => {
+export const ReportView: React.FC<ReportViewProps> = ({ session, experiment, theme = 'dark' }) => {
   const isDark = theme === 'dark';
 
   const handleExport = () => {
-    generatePDFReport(session);
+    generateGenericPDFReport(session, experiment);
   };
 
   return (
@@ -31,10 +31,10 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
             <span>Official Laboratory Document Preview</span>
           </div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            Ohm's Law Verification & Diagnostic Report
+            {experiment.title} • Laboratory Report
           </h1>
           <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Compiled from live session data • Ready for submission & verification
+            Compiled from live session data • Domain: {experiment.domain} • Session: {session.sessionId}
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
         </button>
       </div>
 
-      {/* Report Document Sheet */}
+      {/* Report Document Sheet Preview */}
       <div className={`rounded-2xl border p-6 sm:p-10 space-y-8 shadow-2xl transition-colors ${
         isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-900 shadow-slate-200/60'
       }`}>
@@ -64,7 +64,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
             </div>
             <div>
               <h2 className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>LabVerse AI Virtual Laboratory</h2>
-              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Department of Physics & Electronics Engineering</p>
+              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Department of {experiment.domain} Science & Engineering</p>
             </div>
           </div>
 
@@ -92,22 +92,22 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
           </div>
         </div>
 
-        {/* Section 1: Objective & Governing Formula */}
+        {/* Section 1: Objective & Governing Model */}
         <div className="space-y-3">
           <h3 className={`text-base font-bold border-b pb-2 ${isDark ? 'text-slate-100 border-slate-800' : 'text-slate-900 border-slate-200'}`}>
             1. Executive Objective & Governing Formula
           </h3>
           <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            The primary objective of this laboratory exercise is to empirically verify Ohm's Law ($V = I \cdot R$), examine the linear response of current to applied voltage, investigate open circuit discontinuities, and diagnose instrumental calibration faults using AI tutoring diagnostics.
+            {experiment.learningObjectives.map(o => o.description).join(' ')}
           </p>
           <div className={`p-4 rounded-xl border text-center font-mono text-cyan-600 dark:text-cyan-300 text-sm font-bold ${
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-cyan-200'
           }`}>
-            V = I × R ⇒ I = V / R
+            {experiment.report.governingFormulaLatex}
           </div>
         </div>
 
-        {/* Section 2: Observations Table */}
+        {/* Section 2: Observations Dataset */}
         <div className="space-y-3">
           <h3 className={`text-base font-bold border-b pb-2 ${isDark ? 'text-slate-100 border-slate-800' : 'text-slate-900 border-slate-200'}`}>
             2. Empirical Observations Dataset ({session.observations.length} Runs)
@@ -124,10 +124,12 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
                   <tr>
                     <th className="py-2 px-3">Run #</th>
                     <th className="py-2 px-3">Time</th>
-                    <th className="py-2 px-3">Voltage (V)</th>
-                    <th className="py-2 px-3">Resistance (Ω)</th>
-                    <th className="py-2 px-3">Theoretical I</th>
-                    <th className="py-2 px-3">Measured I</th>
+                    {Object.keys(session.observations[0].parameters).map(k => (
+                      <th key={k} className="py-2 px-3 uppercase">{k}</th>
+                    ))}
+                    {Object.keys(session.observations[0].measurements).map(k => (
+                      <th key={k} className="py-2 px-3 uppercase">{k.replace('_meas', '')}</th>
+                    ))}
                     <th className="py-2 px-3">Fault State</th>
                   </tr>
                 </thead>
@@ -136,19 +138,19 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
                     <tr key={obs.id}>
                       <td className={`py-2 px-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>#{idx + 1}</td>
                       <td className={`py-2 px-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{obs.timestamp}</td>
-                      <td className="py-2 px-3 text-cyan-600 dark:text-cyan-400">{obs.voltage.toFixed(1)} V</td>
-                      <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400">{obs.resistance.toFixed(0)} Ω</td>
-                      <td className="py-2 px-3">{formatCurrent(obs.theoreticalCurrent)}</td>
-                      <td className={`py-2 px-3 font-bold ${obs.faultType !== 'NORMAL' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-300'}`}>
-                        {formatCurrent(obs.measuredCurrent)}
-                      </td>
+                      {Object.keys(obs.parameters).map(k => (
+                        <td key={k} className="py-2 px-3 text-cyan-600 dark:text-cyan-400 font-bold">{obs.parameters[k]}</td>
+                      ))}
+                      {Object.keys(obs.measurements).map(k => (
+                        <td key={k} className="py-2 px-3 font-semibold">{obs.measurements[k]}</td>
+                      ))}
                       <td className="py-2 px-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] ${
-                          obs.faultType === 'NORMAL'
+                          obs.faultsActive.length === 0
                             ? isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-emerald-100 text-emerald-800'
                             : isDark ? 'bg-rose-950 text-rose-400' : 'bg-rose-100 text-rose-800'
                         }`}>
-                          {obs.faultType}
+                          {obs.faultsActive.length === 0 ? 'NORMAL' : obs.faultsActive.join(', ')}
                         </span>
                       </td>
                     </tr>
@@ -159,7 +161,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
           )}
         </div>
 
-        {/* Section 3: Fault Injection Log */}
+        {/* Section 3: Fault Incident Log */}
         <div className="space-y-3">
           <h3 className={`text-base font-bold border-b pb-2 ${isDark ? 'text-slate-100 border-slate-800' : 'text-slate-900 border-slate-200'}`}>
             3. Fault Diagnostics & Incident Log
@@ -175,7 +177,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
                 }`}>
                   <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-mono text-rose-600 dark:text-rose-300 font-bold">[{log.timestamp}] {log.action} - {log.faultType}</span>
+                    <span className="font-mono text-rose-600 dark:text-rose-300 font-bold">[{log.timestamp}] {log.action} - {log.faultTitle}</span>
                     <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{log.details}</p>
                   </div>
                 </div>
@@ -190,7 +192,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' 
         }`}>
           <h3 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>4. Final Verification Statement</h3>
           <p className="leading-relaxed">
-            All data collected in this report adheres to standard physical electrodynamics rules. Theoretical calculations ($I=V/R$) align with normal circuit runs, while injected open circuit and ammeter calibration faults successfully isolated structural discontinuities and instrumental systematic error.
+            {experiment.report.expectedConclusionTemplate}
           </p>
         </div>
 

@@ -1,79 +1,90 @@
-import { SessionState, CircuitInput, ObservationRecord, FaultLogEntry, SimulationResult, FaultType } from '@/types';
-import { runSimulation } from '@/lib/simulation/engine';
+import { ExperimentSession, ExperimentDefinition, LearningMode } from '@/types';
+import { getExperiment, ohmsLawExperiment } from '@/lib/experiments/registry';
 
-const STORAGE_KEY = 'labverse_ohms_law_session_v1';
+const STORAGE_KEY_PREFIX = 'labverse_session_v2_';
 
-export const DEFAULT_INPUT: CircuitInput = {
-  voltage: 6.0,
-  resistance: 20.0,
-  faultType: 'NORMAL',
-};
+export function createInitialSession(experiment: ExperimentDefinition, mode: LearningMode = 'GUIDED'): ExperimentSession {
+  const defaultPreset = experiment.workspace.defaultPreset;
+  const initialParams: Record<string, number> = {};
+  experiment.parameters.forEach(p => {
+    initialParams[p.id] = p.defaultValue;
+  });
 
-export function createInitialSession(): SessionState {
-  const initialResult = runSimulation(DEFAULT_INPUT);
-  const initialObs: ObservationRecord = {
-    id: `obs-${Date.now()}-1`,
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    voltage: initialResult.voltage,
-    resistance: initialResult.resistance,
-    theoreticalCurrent: initialResult.theoreticalCurrent,
-    measuredCurrent: initialResult.measuredCurrent,
-    faultType: initialResult.faultType,
-    notes: 'Initial Baseline Measurement (6.0V, 20.0Ω)',
+  const components = defaultPreset?.components ? defaultPreset.components.map(c => ({ ...c })) : [];
+  const connections = defaultPreset?.connections ? defaultPreset.connections.map(w => ({ ...w })) : [];
+
+  const initialSimInput = {
+    experimentId: experiment.id,
+    components,
+    connections,
+    parameters: initialParams,
+    activeFaults: [],
   };
+
+  const initialResult = experiment.simulate(initialSimInput);
 
   return {
     sessionId: `LV-${Math.floor(100000 + Math.random() * 900000)}`,
     studentName: 'Student Researcher',
+    experimentId: experiment.id,
     startTime: new Date().toISOString(),
-    currentInput: DEFAULT_INPUT,
+    lastUpdated: new Date().toISOString(),
+    mode,
+    components,
+    connections,
+    parameters: initialParams,
+    activeFaults: [],
     lastResult: initialResult,
-    observations: [initialObs],
+    observations: [],
     faultLog: [],
-    completedSteps: [1], // Step 1 pre-checked
-    notes: '',
+    completedSteps: [1],
+    activeChallengeId: experiment.challenges?.[0]?.id,
+    isChallengeCompleted: false,
   };
 }
 
-export function loadSession(): SessionState {
+export function loadExperimentSession(experimentId: string, mode: LearningMode = 'GUIDED'): ExperimentSession {
+  const exp = getExperiment(experimentId);
   if (typeof window === 'undefined') {
-    return createInitialSession();
+    return createInitialSession(exp, mode);
   }
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${experimentId}`);
     if (!raw) {
-      const initial = createInitialSession();
-      saveSession(initial);
+      const initial = createInitialSession(exp, mode);
+      saveExperimentSession(initial);
       return initial;
     }
-    const parsed = JSON.parse(raw) as SessionState;
-    if (!parsed || !parsed.sessionId || !Array.isArray(parsed.observations)) {
+    const parsed = JSON.parse(raw) as ExperimentSession;
+    if (!parsed || parsed.experimentId !== experimentId || !Array.isArray(parsed.components)) {
       throw new Error('Malformed session data in localStorage');
     }
     return parsed;
   } catch (err) {
-    console.warn('Failed to parse saved session, creating fresh state:', err);
-    const fresh = createInitialSession();
-    saveSession(fresh);
+    console.warn(`Failed to parse saved session for ${experimentId}, creating fresh state:`, err);
+    const fresh = createInitialSession(exp, mode);
+    saveExperimentSession(fresh);
     return fresh;
   }
 }
 
-export function saveSession(session: SessionState): void {
+export function saveExperimentSession(session: ExperimentSession): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    const updated = { ...session, lastUpdated: new Date().toISOString() };
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${session.experimentId}`, JSON.stringify(updated));
   } catch (err) {
     console.error('Error saving session to localStorage:', err);
   }
 }
 
-export function clearSession(): SessionState {
+export function clearExperimentSession(experimentId: string): ExperimentSession {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${experimentId}`);
   }
-  const fresh = createInitialSession();
-  saveSession(fresh);
+  const exp = getExperiment(experimentId);
+  const fresh = createInitialSession(exp);
+  saveExperimentSession(fresh);
   return fresh;
 }

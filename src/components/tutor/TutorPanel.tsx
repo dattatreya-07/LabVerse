@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExperimentDefinition, LabComponent, WireConnection, SimulationResult, TutorResponse, SourceReference } from '@/types';
 import { Bot, Send, User, Sparkles, BookOpen, RotateCcw, Loader2 } from 'lucide-react';
 
@@ -34,24 +34,37 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
 }) => {
   const isDark = theme === 'dark';
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-1',
-      sender: 'tutor',
-      text: `Hello! I am your **LabVerse AI Diagnostic Tutor** for **${experiment.title}**.\n\nI analyze your live laboratory workspace, wire connections, parameters, and simulated measurements in real time. Ask me anything or select a diagnostic quick prompt below!`,
-      isCuratedFallback: true,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+  const isEce = experiment.domain === 'ECE' || experiment.id === 'antenna-radiation';
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const quickPrompts = [
-    { label: "Why is measurement 0?", query: "Why is the observed measurement zero or not flowing?" },
-    { label: "Is reading accurate?", query: "Is the current measured instrument reading consistent with theoretical calculations?" },
-    { label: "Explain governing equation", query: `Explain how the governing equation applies to my active inputs.` },
-    { label: "Check circuit wiring", query: "Can you analyze my component placement and wire connections for any errors?" },
-  ];
+  // Reset messages when active experiment changes
+  useEffect(() => {
+    const welcomeMsg: ChatMessage = {
+      id: `welcome-${experiment.id}-${Date.now()}`,
+      sender: 'tutor',
+      text: `Hello! I am your **LabVerse AI Assistant** for **${experiment.title}**.\n\nI analyze your live laboratory workspace, parameters, and simulated measurements in real time. Ask me anything or select a diagnostic prompt below!`,
+      isCuratedFallback: true,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages([welcomeMsg]);
+  }, [experiment.id, experiment.title]);
+
+  const quickPrompts = isEce
+    ? [
+        { label: "Why Dish focuses power?", query: "Why does a parabolic dish concentrate RF power into a narrow directional beam lobe?" },
+        { label: "Explain E-Field formula", query: "How is Peak Electric Field E(r) calculated from transmit power and distance?" },
+        { label: "Path Loss (FSPL)", query: "How does carrier frequency affect Free Space Path Loss (FSPL) in dB?" },
+        { label: "Dipole vs Yagi", query: "What is the difference between Omni-directional Dipole donut and Yagi-Uda beam patterns?" },
+      ]
+    : [
+        { label: "Why is measurement 0?", query: "Why is the observed measurement zero or not flowing?" },
+        { label: "Is reading accurate?", query: "Is the current measured instrument reading consistent with theoretical calculations?" },
+        { label: "Explain governing equation", query: `Explain how the governing equation applies to my active inputs.` },
+        { label: "Check circuit wiring", query: "Can you analyze my component placement and wire connections for any errors?" },
+      ];
 
   const handleSend = async (queryText?: string) => {
     const textToSend = queryText || inputQuery;
@@ -268,7 +281,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask AI tutor about your circuit setup, equations, or faults..."
+            placeholder={isEce ? "Ask AI tutor about radiation patterns, E-field equations, or antenna types..." : "Ask AI tutor about your experiment setup, equations, or faults..."}
             disabled={isLoading}
             className={`flex-1 px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-cyan-500 transition-all ${
               isDark

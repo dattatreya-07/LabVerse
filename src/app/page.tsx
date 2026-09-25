@@ -21,18 +21,28 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report'>('lab');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  // Load session & theme preference from localStorage on mount
+  // Load initial experiment from URL query or default on mount
   useEffect(() => {
-    const exp = getExperiment(selectedExpId);
+    let initialExpId = 'ohms-law';
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryExp = urlParams.get('exp') || urlParams.get('experiment');
+      if (queryExp) {
+        initialExpId = queryExp;
+      }
+    }
+
+    setSelectedExpId(initialExpId);
+    const exp = getExperiment(initialExpId);
     setCurrentExperiment(exp);
-    const loaded = loadExperimentSession(selectedExpId, 'GUIDED');
+    const loaded = loadExperimentSession(initialExpId, 'GUIDED');
     setSession(loaded);
 
     const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setTheme(savedTheme);
     }
-  }, [selectedExpId]);
+  }, []);
 
   const handleToggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -40,6 +50,7 @@ export default function Home() {
     localStorage.setItem('labverse_theme', nextTheme);
   };
 
+  // Update experiment when selectedExpId changes
   const handleSelectExperiment = (expId: string) => {
     setSelectedExpId(expId);
     const exp = getExperiment(expId);
@@ -47,6 +58,10 @@ export default function Home() {
     const loaded = loadExperimentSession(expId, 'GUIDED');
     setSession(loaded);
     setActiveTab('prep');
+
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', `/?exp=${expId}`);
+    }
   };
 
   if (!session) {

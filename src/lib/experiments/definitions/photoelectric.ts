@@ -4,56 +4,58 @@ import { simulatePhotoelectric } from '@/lib/simulation/quantum/photoelectric-si
 export const photoelectricExperiment: ExperimentDefinition = {
   id: 'photoelectric-effect',
   title: 'Photoelectric Effect & Planck Constant',
-  tagline: 'Witness the quantum nature of light and calculate stopping potentials.',
+  tagline: 'Observe photon quantization and measure Planck\'s constant h.',
   domain: 'QUANTUM',
   difficulty: 'INTERMEDIATE',
   availability: 'AVAILABLE',
   estimatedMinutes: 25,
   coverIcon: 'Sun',
-  summary: 'Illuminate metallic cathode targets with monochromatic light, determine stopping potentials as a function of frequency, and measure Planck constant h and work function Phi.',
+  summary: 'Irradiate metal photocathodes with monochromatic photon beams. Measure the kinetic energy of emitted photoelectrons via retarding stopping potential V_stop to determine Planck\'s constant h and metal work functions.',
   
   theory: {
-    corePrinciple: 'Einstein photoelectric equation states that light consists of discrete energy quanta (photons). A photon transferring its energy to an electron ejects it if photon energy exceeds metal work function.',
+    corePrinciple: 'Light consists of discrete energy quanta (photons) with energy E = h*f. Photoelectron emission occurs instantaneously when photon energy exceeds the material work function Phi.',
     equations: [
-      'E_{photon} = h\\nu = \\frac{hc}{\\lambda}',
-      'K_{max} = h\\nu - \\Phi',
-      'e V_0 = K_{max} = h\\nu - \\Phi',
+      'E = h \\nu = \\frac{hc}{\\lambda}',
+      'K_{\\max} = h\\nu - \\Phi = e V_0',
       'V_0 = \\left(\\frac{h}{e}\\right)\\nu - \\frac{\\Phi}{e}'
     ],
-    derivation: 'Plotting stopping potential V0 vs frequency nu yields a straight line with slope h/e and y-intercept -Phi/e.',
+    derivation: 'Einstein\'s Photoelectric Equation: Incoming photon energy divides between freeing the electron (Work Function Phi) and supplying maximum kinetic energy (K_max = e*V_0). Plotting stopping potential V_0 versus frequency nu yields a straight line with slope h/e.',
     variableDescriptions: {
-      'h': 'Planck Constant (6.626 x 10^-34 J*s)',
-      'nu': 'Frequency of incident photon (Hz)',
-      'lambda': 'Wavelength of light (nm)',
-      'Phi': 'Work Function of cathode material (eV)',
-      'V0': 'Stopping Potential required to halt photocurrent (V)'
+      'E': 'Photon energy (electron-volts, eV)',
+      'h': 'Planck\'s constant (6.626 x 10^-34 J·s or 4.1357 x 10^-15 eV·s)',
+      'lambda': 'Wavelength of incident light (nanometers, nm)',
+      'Phi': 'Work function of target cathode metal (eV)',
+      'V_0': 'Stopping potential required to halt photocurrent (Volts, V)'
     }
   },
 
   learningObjectives: [
-    { id: 'obj-pe1', description: 'Observe that photoelectron kinetic energy depends on frequency, not intensity.', bloomLevel: 'UNDERSTAND' },
-    { id: 'obj-pe2', description: 'Measure stopping potential V0 across different monochromatic wavelengths.', bloomLevel: 'APPLY' },
-    { id: 'obj-pe3', description: 'Calculate Planck constant h from the slope of V0 vs frequency.', bloomLevel: 'ANALYZE' }
+    { id: 'obj-pe1', description: 'Confirm that electron kinetic energy depends on photon frequency/wavelength, not beam intensity.', bloomLevel: 'UNDERSTAND' },
+    { id: 'obj-pe2', description: 'Calculate stopping potential V_0 for varied wavelengths across Potassium (Phi = 2.20 eV).', bloomLevel: 'APPLY' },
+    { id: 'obj-pe3', description: 'Determine Planck\'s constant h from the slope of stopping potential vs light frequency.', bloomLevel: 'EVALUATE' }
   ],
 
   equipment: [
     {
       type: 'LIGHT_SOURCE',
-      title: 'Monochromatic Light Source',
-      description: 'Tunable wavelength spectral lamp (200nm - 800nm).',
+      title: 'Monochromatic Laser Source',
+      description: 'Tunable wavelength UV/Visible spectrum emitter (200 nm - 750 nm).',
       domain: 'QUANTUM',
-      defaultProperties: { wavelength: 450, intensity: 50 },
+      defaultProperties: { wavelength: 450, intensity: 100 },
       terminals: [],
       iconName: 'Sun'
     },
     {
       type: 'PHOTO_TUBE',
       title: 'Vacuum Phototube Cell',
-      description: 'Cathode emitter with anode collector in high vacuum glass enclosure.',
+      description: 'Quartz evacuated chamber with Potassium (K) cathode emitter and collector ring.',
       domain: 'QUANTUM',
-      defaultProperties: { workFunction: 2.2 },
-      terminals: [],
-      iconName: 'Radio'
+      defaultProperties: { workFunction: 2.20 },
+      terminals: [
+        { id: 'anode', name: 'Anode Ring (+)', type: 'POSITIVE', position: { x: 55, y: 0 }, label: 'A' },
+        { id: 'cathode', name: 'Cathode (-)', type: 'NEGATIVE', position: { x: -55, y: 0 }, label: 'K' }
+      ],
+      iconName: 'Zap'
     }
   ],
 
@@ -83,7 +85,35 @@ export const photoelectricExperiment: ExperimentDefinition = {
   ],
 
   workspace: {
-    allowedEquipment: ['LIGHT_SOURCE', 'PHOTO_TUBE'],
+    allowedEquipment: ['LIGHT_SOURCE', 'PHOTO_TUBE', 'AMMETER', 'DC_SUPPLY'],
+    defaultPreset: {
+      components: [
+        {
+          id: 'light-source-1',
+          type: 'LIGHT_SOURCE',
+          title: 'Monochromatic Laser Source',
+          domain: 'QUANTUM',
+          position: { x: 300, y: 220 },
+          terminals: [],
+          properties: { wavelength: 450, intensity: 100 },
+          state: {}
+        },
+        {
+          id: 'photo-tube-1',
+          type: 'PHOTO_TUBE',
+          title: 'Vacuum Phototube Cell',
+          domain: 'QUANTUM',
+          position: { x: 520, y: 220 },
+          terminals: [
+            { id: 'anode', name: 'Anode Ring (+)', type: 'POSITIVE', position: { x: 55, y: 0 }, label: 'A' },
+            { id: 'cathode', name: 'Cathode (-)', type: 'NEGATIVE', position: { x: -55, y: 0 }, label: 'K' }
+          ],
+          properties: { workFunction: 2.20 },
+          state: {}
+        }
+      ],
+      connections: []
+    },
     guidedSteps: [
       { stepNumber: 1, title: 'Select 400 nm Violet Light', instruction: 'Set wavelength to 400 nm (E = 3.10 eV).' },
       { stepNumber: 2, title: 'Observe Photocurrent', instruction: 'With Potassium (Phi = 2.2 eV), photoelectrons are emitted (K_max = 0.90 eV).' },
@@ -100,51 +130,52 @@ export const photoelectricExperiment: ExperimentDefinition = {
       targetValue: 1.35,
       tolerance: 0.05,
       unit: 'V',
-      hint: 'E_ph = 1240 / 350 = 3.54 eV. V0 = 3.54 - 2.20 = 1.34 V.'
+      hint: 'E = 1240 / 350 = 3.54 eV. V_0 = 3.54 - 2.20 = 1.34 V.'
     }
   ],
 
   faults: [
     {
-      id: 'FAULT_PHOTO_SURFACE_OXIDATION',
-      title: 'Cathode Surface Oxidation (+0.8 eV)',
-      description: 'Oxidation layer on the emitter raises effective work function and suppresses electron emission.',
+      id: 'FAULT_SURFACE_OXIDATION',
+      title: 'Cathode Surface Oxidation (+0.5 eV Work Function)',
+      description: 'Oxide layer increases the energy barrier required to extract electrons.',
       applicableComponentTypes: ['PHOTO_TUBE'],
-      symptoms: ['Stopping potential is lower than expected', 'Photocurrent severely diminished'],
-      diagnosticHints: ['Inspect phototube vacuum integrity and cathode cleanliness'],
+      symptoms: ['Stopping potential is lower than expected for clean metal surface'],
+      diagnosticHints: ['Clean metal surface in ultra-high vacuum chamber'],
       effect: 'PARAM_DEVIATION'
     }
   ],
 
   analysis: {
-    xAxisLabel: 'Photon Frequency (ν)',
-    xAxisKey: 'frequencyTeraHz',
-    xAxisUnit: 'THz',
+    xAxisLabel: 'Light Frequency (ν)',
+    xAxisKey: 'frequency',
+    xAxisUnit: 'x 10¹⁴ Hz',
     yAxisLabel: 'Stopping Potential (V₀)',
     yAxisKey: 'stopping_pot_meas',
     yAxisUnit: 'V',
-    expectedSlopeFormula: 'Slope = h / e (Planck constant / elementary charge)',
-    theoreticalRelationshipDescription: 'The linear slope of V0 vs frequency equals h/e. Multiplying the slope by electron charge e yields experimental Planck constant h.'
+    expectedSlopeFormula: 'Slope = h / e',
+    theoreticalRelationshipDescription: 'The linear relationship between stopping potential V₀ and frequency ν has slope h/e = 4.136 x 10⁻¹⁵ V·s. Multiplying slope by elementary charge e directly yields Planck\'s constant.'
   },
 
   tutorContext: {
     experimentId: 'photoelectric-effect',
-    experimentTitle: 'Photoelectric Effect Quantum Lab',
-    learningObjectives: ['Measure stopping potentials', 'Calculate Planck constant h', 'Verify photon energy E = h*nu'],
-    governingEquations: ['E = h * nu', 'e * V0 = h * nu - Phi'],
-    commonMistakes: ['Thinking increasing light intensity increases the stopping voltage (intensity only increases current, not kinetic energy).']
+    experimentTitle: 'Quantum Photoelectric Laboratory',
+    learningObjectives: ['Verify Einstein photoelectric equation', 'Measure stopping potential', 'Calculate Planck constant h'],
+    governingEquations: ['E = h*f = hc/lambda', 'K_max = E - Phi = e*V0'],
+    commonMistakes: ['Thinking increasing brightness/intensity increases electron kinetic energy (it only increases the number of emitted electrons).']
   },
 
   report: {
-    title: 'Photoelectric Effect and Planck Constant Laboratory Report',
-    governingFormulaLatex: "e V_0 = h\\nu - \\Phi \\implies V_0 = \\left(\\frac{h}{e}\\right)\\nu - \\frac{\\Phi}{e}",
+    title: 'Quantum Photoelectric Effect & Planck Constant Determination',
+    governingFormulaLatex: "K_{\\max} = h\\nu - \\Phi = e V_0",
     procedureSummary: [
-      'Exposed phototube cathode to monochromatic wavelengths (250nm - 650nm).',
-      'Measured stopping potential V0 for each frequency to determine maximum photoelectron kinetic energy.'
+      'Irradiated Potassium photocathode with monochromatic wavelength spectrum (250 nm - 600 nm).',
+      'Measured opposing stopping potential V₀ to halt photocurrent at each frequency.',
+      'Plotted V₀ versus ν and calculated Planck\'s constant h from graph gradient.'
     ],
-    expectedConclusionTemplate: 'The experimental results validate Einstein photoelectric equation. The linear relationship between stopping potential and frequency yields an experimental Planck constant h within 1.5% of theoretical value.'
+    expectedConclusionTemplate: 'The linear slope of stopping potential versus optical frequency yields Planck\'s constant h ≈ 6.63 x 10⁻³⁴ J·s, in full agreement with quantum mechanical photon theory.'
   },
 
-  validateTopology: () => ({ isValid: true, canSimulate: true, message: 'Apparatus aligned', errors: [], warnings: [] }),
+  validateTopology: () => ({ isValid: true, canSimulate: true, message: 'Phototube optical chamber aligned and calibrated', errors: [], warnings: [] }),
   simulate: simulatePhotoelectric
 };

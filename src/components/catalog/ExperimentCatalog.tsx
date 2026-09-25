@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DomainCategory } from '@/types';
 import { getAllExperiments } from '@/lib/experiments/registry';
 import { 
@@ -9,6 +9,8 @@ import {
   Sun, 
   Atom, 
   Dna, 
+  TrendingUp,
+  FlaskConical,
   Play, 
   Clock, 
   ArrowRight, 
@@ -34,23 +36,39 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
   const [selectedDomain, setSelectedDomain] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const domParam = new URLSearchParams(window.location.search).get('domain');
+      if (domParam) {
+        setSelectedDomain(domParam.toUpperCase());
+      }
+    }
+  }, []);
+
   const allExperiments = getAllExperiments();
 
   const domains: Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'ALL', label: 'All Domains', icon: Compass },
+    { id: 'PHYSICS', label: 'Physics (All)', icon: Activity },
     { id: 'ELECTRONICS', label: 'Electronics', icon: Zap },
     { id: 'MECHANICS', label: 'Mechanics', icon: Activity },
-    { id: 'QUANTUM', label: 'Quantum Physics', icon: Sun },
-    { id: 'NUCLEAR', label: 'Nuclear Physics', icon: Atom },
-    { id: 'BIOLOGY', label: 'Molecular Biology', icon: Dna },
+    { id: 'QUANTUM', label: 'Quantum', icon: Sun },
+    { id: 'NUCLEAR', label: 'Nuclear', icon: Atom },
+    { id: 'CHEMISTRY', label: 'Chemistry', icon: FlaskConical },
+    { id: 'BIOLOGY', label: 'Biology', icon: Dna },
+    { id: 'FINANCE', label: 'Finance', icon: TrendingUp },
   ];
 
   const filtered = allExperiments.filter((exp) => {
-    const matchesDomain = selectedDomain === 'ALL' || exp.domain === selectedDomain;
+    let matchesDomain = selectedDomain === 'ALL' || exp.domain.toUpperCase() === selectedDomain.toUpperCase();
+    if (selectedDomain === 'PHYSICS') {
+      matchesDomain = ['PHYSICS', 'MECHANICS', 'QUANTUM', 'NUCLEAR'].includes(exp.domain.toUpperCase());
+    }
     const matchesSearch = searchQuery.trim() === '' || 
       exp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exp.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.domain.toLowerCase().includes(searchQuery.toLowerCase());
+      exp.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.tagline && exp.tagline.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesDomain && matchesSearch;
   });
 
@@ -61,6 +79,8 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
       case 'QUANTUM': return <Sun className="w-5 h-5 text-purple-400" />;
       case 'NUCLEAR': return <Atom className="w-5 h-5 text-rose-400" />;
       case 'BIOLOGY': return <Dna className="w-5 h-5 text-emerald-400" />;
+      case 'CHEMISTRY': return <FlaskConical className="w-5 h-5 text-emerald-400" />;
+      case 'FINANCE': return <TrendingUp className="w-5 h-5 text-amber-400" />;
       default: return <Zap className="w-5 h-5 text-cyan-400" />;
     }
   };
@@ -91,7 +111,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
         <div className="max-w-3xl space-y-3 relative z-10">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>LabVerse Science Catalog</span>
+            <span>LabVerse Universal Science & Simulation Catalog</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -99,7 +119,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
           </h1>
 
           <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Browse physics, electronics, mechanics, quantum, and biology lab modules backed by deterministic simulation engines. Select an experiment to review learning objectives, apparatus schemas, and enter the virtual laboratory.
+            Conduct experiments in physics, electronics, mechanics, quantum optics, chemistry reaction kinetics, biology, and quantitative financial risk. All modules run live numerical solvers.
           </p>
         </div>
       </div>
@@ -111,7 +131,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
           <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
           <input
             type="text"
-            placeholder="Search experiments by title, category, or concept..."
+            placeholder="Search experiments by title, domain, or concept..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all ${
@@ -219,7 +239,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
                     </div>
                   )}
 
-                  {/* Duration & Prerequisites */}
+                  {/* Duration & Status */}
                   <div className="flex items-center justify-between text-[11px] font-mono border-t pt-3 border-slate-800/60">
                     <div className="flex items-center space-x-1 text-slate-400">
                       <Clock className="w-3.5 h-3.5 text-cyan-400" />
@@ -244,28 +264,14 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
                 {/* Action Button */}
                 <div className="pt-2">
-                  {isAvailable ? (
-                    <button
-                      onClick={() => onSelectExperiment(exp.id)}
-                      className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-slate-950" />
-                      <span>Select Experiment & Theory</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onSelectExperiment(exp.id)}
-                      className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                        isDark
-                          ? 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                          : 'bg-slate-100 border-slate-300 text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>View Specification</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onSelectExperiment(exp.id)}
+                    className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-slate-950" />
+                    <span>Select Experiment & Theory</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
               </div>

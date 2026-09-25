@@ -82,6 +82,31 @@ export const pendulumExperiment: ExperimentDefinition = {
 
   workspace: {
     allowedEquipment: ['PENDULUM', 'STOPWATCH', 'RULER'],
+    defaultPreset: {
+      components: [
+        {
+          id: 'pendulum-bob-1',
+          type: 'PENDULUM',
+          title: 'Suspended Pendulum Bob',
+          domain: 'MECHANICS',
+          position: { x: 380, y: 180 },
+          terminals: [],
+          properties: { length: 1.0, mass: 0.5 },
+          state: {}
+        },
+        {
+          id: 'stopwatch-1',
+          type: 'STOPWATCH',
+          title: 'Precision Digital Stopwatch',
+          domain: 'MECHANICS',
+          position: { x: 560, y: 220 },
+          terminals: [],
+          properties: {},
+          state: {}
+        }
+      ],
+      connections: []
+    },
     guidedSteps: [
       { stepNumber: 1, title: 'Set String Length L = 1.0 m', instruction: 'Set length to 1.0m on Earth (g = 9.81 m/s²).' },
       { stepNumber: 2, title: 'Measure Period T', instruction: 'Run the timer and observe theoretical period T = 2.006 s.' },
@@ -143,6 +168,6 @@ export const pendulumExperiment: ExperimentDefinition = {
     expectedConclusionTemplate: 'The empirical measurements confirm that the square of the oscillation period is directly proportional to length and inversely proportional to gravitational acceleration.'
   },
 
-  validateTopology: () => ({ isValid: true, canSimulate: true, message: 'Pendulum setup valid', errors: [], warnings: [] }),
+  validateTopology: () => ({ isValid: true, canSimulate: true, message: 'Pendulum setup valid and ready for oscillation', errors: [], warnings: [] }),
   simulate: simulatePendulum
 };

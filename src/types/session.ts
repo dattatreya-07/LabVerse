@@ -23,6 +23,15 @@ export interface FaultLogEntry {
   details: string;
 }
 
+export interface SessionGrade {
+  score: number;
+  maxScore: number;
+  accuracyPercentage: number;
+  status: 'EXCELLENT' | 'PASSED' | 'NEEDS_REVISION';
+  feedback: string;
+  evaluatedAt: string;
+}
+
 export interface ExperimentSession {
   schemaVersion?: string; // e.g. '1.0.0'
   sessionId: string;
@@ -41,4 +50,9 @@ export interface ExperimentSession {
   completedSteps: number[];
   activeChallengeId?: string;
   isChallengeCompleted?: boolean;
+  isCompleted?: boolean;
+  completedAt?: string;
+  grade?: SessionGrade;
+  quizAnswers?: Record<number, number>;
+  quizScore?: number;
 }

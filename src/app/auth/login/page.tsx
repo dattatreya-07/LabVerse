@@ -19,16 +19,28 @@ export default function LoginPage() {
       setLoading(true);
       setErrorMsg(null);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${origin}/auth/callback`,
+          skipBrowserRedirect: true,
         },
       });
-      if (error) throw error;
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Google authentication failed';
-      setErrorMsg(msg);
+      if (msg.includes('provider is not enabled') || msg.includes('Unsupported provider')) {
+        setErrorMsg('Google OAuth is not enabled on this Supabase project. Please sign in with Email & Password or continue as Guest.');
+      } else {
+        setErrorMsg(msg);
+      }
       setLoading(false);
     }
   };

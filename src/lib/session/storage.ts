@@ -1,4 +1,4 @@
-import { ExperimentSession, ExperimentDefinition, LearningMode, ObservationRecord } from '@/types';
+import { ExperimentSession, ExperimentDefinition, LearningMode, ObservationRecord, SessionGrade } from '@/types';
 import { getExperiment } from '@/lib/experiments/registry';
 
 const STORAGE_KEY_PREFIX = 'labverse_session_v3_';
@@ -42,6 +42,7 @@ export function createInitialSession(experiment: ExperimentDefinition, mode: Lea
     completedSteps: [1],
     activeChallengeId: experiment.challenges?.[0]?.id,
     isChallengeCompleted: false,
+    isCompleted: false,
   };
 }
 
@@ -71,6 +72,7 @@ export function loadExperimentSession(experimentId: string, mode: LearningMode =
       observations: Array.isArray(parsed.observations) ? parsed.observations : [],
       faultLog: Array.isArray(parsed.faultLog) ? parsed.faultLog : [],
       completedSteps: Array.isArray(parsed.completedSteps) ? parsed.completedSteps : [1],
+      isCompleted: typeof parsed.isCompleted === 'boolean' ? parsed.isCompleted : false,
     };
 
     return migratedSession;
@@ -104,6 +106,74 @@ export function clearExperimentSession(experimentId: string): ExperimentSession 
   const fresh = createInitialSession(exp);
   saveExperimentSession(fresh);
   return fresh;
+}
+
+/**
+ * Evaluates student lab work, calculates experimental accuracy, assigns grade, and marks session completed.
+ */
+export function evaluateAndCompleteSession(session: ExperimentSession, experiment: ExperimentDefinition): { session: ExperimentSession; grade: SessionGrade } {
+  const steps = experiment.workspace.guidedSteps || [];
+  const totalSteps = steps.length || 1;
+  const completedSteps = session.completedSteps.length;
+  const stepScore = Math.min(30, Math.round((completedSteps / totalSteps) * 30));
+
+  // Observation score: 40 points maximum for at least 3 valid empirical runs
+  const obsCount = session.observations.length;
+  const obsScore = Math.min(40, Math.round((obsCount / 3) * 40));
+
+  // Accuracy evaluation (30 points maximum)
+  let totalErrorPercent = 0;
+  let evaluatedPoints = 0;
+
+  session.observations.forEach(obs => {
+    Object.keys(obs.measurements).forEach(key => {
+      const meas = obs.measurements[key];
+      const theo = obs.theoreticalValues[key];
+      if (typeof meas === 'number' && typeof theo === 'number' && theo !== 0) {
+        const err = Math.abs((meas - theo) / theo) * 100;
+        totalErrorPercent += Math.min(100, err);
+        evaluatedPoints++;
+      }
+    });
+  });
+
+  const avgError = evaluatedPoints > 0 ? totalErrorPercent / evaluatedPoints : 0;
+  const accuracyScore = Math.max(0, Math.min(30, Math.round(30 - (avgError * 0.5))));
+  const accuracyPercentage = Math.max(0, Math.min(100, Math.round(100 - avgError)));
+
+  const totalScore = stepScore + obsScore + accuracyScore;
+  const maxScore = 100;
+
+  let status: 'EXCELLENT' | 'PASSED' | 'NEEDS_REVISION' = 'PASSED';
+  let feedback = 'Lab procedure successfully completed and empirical results match theoretical models within standard scientific tolerances.';
+
+  if (totalScore >= 85) {
+    status = 'EXCELLENT';
+    feedback = 'Outstanding scientific rigor! All steps verified, rich observation dataset collected, and high numerical accuracy achieved.';
+  } else if (totalScore < 50) {
+    status = 'NEEDS_REVISION';
+    feedback = 'Please complete all guided steps and record more observation data points across varied parameter ranges.';
+  }
+
+  const grade: SessionGrade = {
+    score: totalScore,
+    maxScore,
+    accuracyPercentage,
+    status,
+    feedback,
+    evaluatedAt: new Date().toISOString(),
+  };
+
+  const updatedSession: ExperimentSession = {
+    ...session,
+    isCompleted: true,
+    completedAt: new Date().toISOString(),
+    grade,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  saveExperimentSession(updatedSession);
+  return { session: updatedSession, grade };
 }
 
 /**

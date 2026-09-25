@@ -3,7 +3,7 @@
 import React from 'react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 import { generateGenericPDFReport } from '@/lib/report/pdf-generator';
-import { FileText, Download, ShieldCheck, AlertTriangle, Cpu } from 'lucide-react';
+import { FileText, Download, ShieldCheck, AlertTriangle, Cpu, Award, CheckCircle2 } from 'lucide-react';
 
 interface ReportViewProps {
   session: ExperimentSession;
@@ -13,6 +13,8 @@ interface ReportViewProps {
 
 export const ReportView: React.FC<ReportViewProps> = ({ session, experiment, theme = 'dark' }) => {
   const isDark = theme === 'dark';
+  const grade = session.grade;
+  const isCompleted = session.isCompleted;
 
   const handleExport = () => {
     generateGenericPDFReport(session, experiment);
@@ -40,12 +42,45 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, experiment, the
 
         <button
           onClick={handleExport}
-          className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-[0_0_20px_rgba(6,182,212,0.35)] transition-all flex items-center space-x-2 shrink-0"
+          className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-[0_0_20px_rgba(6,182,212,0.35)] transition-all flex items-center space-x-2 shrink-0 cursor-pointer"
         >
           <Download className="w-4 h-4" />
           <span>Export Official PDF Report</span>
         </button>
       </div>
+
+      {/* Official Grade Card (If Evaluated) */}
+      {isCompleted && grade && (
+        <div className={`p-6 rounded-2xl border flex items-center justify-between gap-4 transition-all ${
+          isDark 
+            ? 'bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/40 border-emerald-500/40 shadow-xl' 
+            : 'bg-gradient-to-r from-emerald-50 via-white to-cyan-50 border-emerald-300 shadow-md'
+        }`}>
+          <div className="flex items-center space-x-4">
+            <div className={`p-3.5 rounded-2xl border ${
+              isDark ? 'bg-emerald-950 border-emerald-700 text-emerald-400' : 'bg-emerald-100 border-emerald-300 text-emerald-700'
+            }`}>
+              <Award className="w-7 h-7" />
+            </div>
+            <div>
+              <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border uppercase ${
+                isDark ? 'bg-emerald-950 text-emerald-400 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+              }`}>
+                CERTIFICATE OF COMPLETION • {grade.status}
+              </span>
+              <h3 className={`text-lg font-bold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                Overall Grade: {grade.score} / {grade.maxScore} Points ({grade.accuracyPercentage}% Scientific Accuracy)
+              </h3>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{grade.feedback}</p>
+            </div>
+          </div>
+
+          <div className="hidden sm:block text-right font-mono text-xs text-slate-400">
+            <div>Evaluated On</div>
+            <div className="font-semibold text-slate-200">{new Date(grade.evaluatedAt).toLocaleDateString()}</div>
+          </div>
+        </div>
+      )}
 
       {/* Report Document Sheet Preview */}
       <div className={`rounded-2xl border p-6 sm:p-10 space-y-8 shadow-2xl transition-colors ${
@@ -98,7 +133,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, experiment, the
             1. Executive Objective & Governing Formula
           </h3>
           <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            {experiment.learningObjectives.map(o => o.description).join(' ')}
+            {experiment.learningObjectives.map(o => typeof o === 'string' ? o : o.description).join(' ')}
           </p>
           <div className={`p-4 rounded-xl border text-center font-mono text-cyan-600 dark:text-cyan-300 text-sm font-bold ${
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-cyan-200'
@@ -114,7 +149,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, experiment, the
           </h3>
 
           {session.observations.length === 0 ? (
-            <p className="text-xs text-slate-400 italic">No observation runs recorded in session.</p>
+            <p className="text-xs text-slate-400 italic">No observation runs recorded in session. Run the simulation to log data points.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className={`w-full text-left text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>

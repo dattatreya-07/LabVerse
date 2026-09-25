@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header, NavTab } from '@/components/nav/Header';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { ExperimentCatalog } from '@/components/catalog/ExperimentCatalog';
@@ -18,56 +18,89 @@ import { createClient } from '@/lib/supabase/client';
 
 import { ExperimentSession, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
 import { getExperiment } from '@/lib/experiments/registry';
-import { loadExperimentSession, saveExperimentSession, clearExperimentSession } from '@/lib/session/storage';
+import { loadExperimentSession, saveExperimentSession, clearExperimentSession, evaluateAndCompleteSession, createInitialSession } from '@/lib/session/storage';
+import { syncDynamicSimulation } from '@/lib/simulation/dynamic-sync';
 
 export default function Home() {
-  const [selectedExpId, setSelectedExpId] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const expParam = new URLSearchParams(window.location.search).get('exp');
-      if (expParam) return expParam;
-    }
-    return 'ohms-law';
-  });
-
+  const [isMounted, setIsMounted] = useState(false);
+  const [selectedExpId, setSelectedExpId] = useState<string>('ohms-law');
   const [session, setSession] = useState<ExperimentSession>(() => {
-    const expId = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('exp') || 'ohms-law') : 'ohms-law';
-    return loadExperimentSession(expId, 'GUIDED');
+    return createInitialSession(getExperiment('ohms-law'), 'GUIDED');
   });
-
-  const [activeTab, setActiveTab] = useState<NavTab | 'landing'>(() => {
-    if (typeof window !== 'undefined') {
-      const tabParam = new URLSearchParams(window.location.search).get('tab') as NavTab | null;
-      if (tabParam && ['dashboard', 'catalog', 'prep', 'lab', 'analysis', 'tutor', 'report'].includes(tabParam)) {
-        return tabParam;
-      }
-    }
-    return 'landing';
-  });
-
+  const [activeTab, setActiveTab] = useState<NavTab | 'landing'>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userDisplayName, setUserDisplayName] = useState<string>('');
 
-  React.useEffect(() => {
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState<boolean>(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Client-side initialization after mount to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+
+    // 1. Read URL Search Params
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get('tab') as NavTab | null;
+    const expParam = searchParams.get('exp');
+
+    const targetExpId = expParam || 'ohms-law';
+    if (expParam) {
+      setSelectedExpId(targetExpId);
+    }
+
+    if (tabParam && ['dashboard', 'catalog', 'prep', 'lab', 'analysis', 'tutor', 'report'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+
+    // 2. Read Theme Preference
+    const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+    }
+
+    // 3. Load Saved Experiment Session with dynamic sync
+    const exp = getExperiment(targetExpId);
+    const loadedSession = loadExperimentSession(targetExpId, 'GUIDED');
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      exp,
+      loadedSession.components,
+      loadedSession.connections,
+      loadedSession.parameters,
+      loadedSession.activeFaults
+    );
+    setSession({
+      ...loadedSession,
+      components: updatedComponents,
+      lastResult: simulationResult,
+    });
+
+    // 4. Check Supabase Auth
     async function checkAuth() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setIsAuthenticated(true);
-        setUserDisplayName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Researcher');
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setIsAuthenticated(true);
+          setUserDisplayName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Researcher');
+        }
+      } catch (e) {
+        console.warn('Auth check error in offline/guest mode:', e);
       }
     }
     checkAuth();
   }, []);
 
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [privacyModalOpen, setPrivacyModalOpen] = useState<boolean>(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
-      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+  // Synchronize HTML element class with current theme state
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
-    return 'dark';
-  });
+  }, [theme]);
 
   const addToast = (type: 'success' | 'warning' | 'info', title: string, description?: string) => {
     const newToast: ToastMessage = {
@@ -107,11 +140,25 @@ export default function Home() {
 
   const handleSelectExperiment = (expId: string) => {
     setSelectedExpId(expId);
+    const exp = getExperiment(expId);
     const loaded = loadExperimentSession(expId, 'GUIDED');
-    setSession(loaded);
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      exp,
+      loaded.components,
+      loaded.connections,
+      loaded.parameters,
+      loaded.activeFaults
+    );
+    const fullySynced = {
+      ...loaded,
+      components: updatedComponents,
+      lastResult: simulationResult,
+    };
+    setSession(fullySynced);
+    saveExperimentSession(fullySynced);
     setActiveTab('prep');
     syncUrlParams('prep', expId);
-    addToast('info', `Selected ${getExperiment(expId).title}`, 'Review theory and apparatus setup before entering lab.');
+    addToast('info', `Selected ${exp.title}`, 'Review theory and apparatus setup before entering lab.');
   };
 
   const isDark = theme === 'dark';
@@ -122,17 +169,34 @@ export default function Home() {
   };
 
   const handleUpdateComponents = (comps: LabComponent[]) => {
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      currentExperiment,
+      comps,
+      session.connections,
+      session.parameters,
+      session.activeFaults
+    );
     const updated = {
       ...session,
-      components: comps,
+      components: updatedComponents,
+      lastResult: simulationResult,
     };
     updateSessionState(updated);
   };
 
   const handleUpdateConnections = (conns: WireConnection[]) => {
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      currentExperiment,
+      session.components,
+      conns,
+      session.parameters,
+      session.activeFaults
+    );
     const updated = {
       ...session,
       connections: conns,
+      components: updatedComponents,
+      lastResult: simulationResult,
     };
     updateSessionState(updated);
   };
@@ -143,21 +207,19 @@ export default function Home() {
       [paramId]: value,
     };
 
-    // If components on board have matching property, sync them
-    const nextComps = session.components.map(c => {
-      if (paramId === 'voltage' && (c.type === 'BATTERY' || c.type === 'DC_SUPPLY')) {
-        return { ...c, properties: { ...c.properties, voltage: value } };
-      }
-      if (paramId === 'resistance' && (c.type === 'RESISTOR' || c.type === 'VARIABLE_RESISTOR')) {
-        return { ...c, properties: { ...c.properties, resistance: value } };
-      }
-      return c;
-    });
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      currentExperiment,
+      session.components,
+      session.connections,
+      nextParams,
+      session.activeFaults
+    );
 
     const updated = {
       ...session,
       parameters: nextParams,
-      components: nextComps,
+      components: updatedComponents,
+      lastResult: simulationResult,
     };
     updateSessionState(updated);
   };
@@ -180,9 +242,19 @@ export default function Home() {
       details: faultDef?.description || `Fault state updated: ${action}`,
     };
 
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      currentExperiment,
+      session.components,
+      session.connections,
+      session.parameters,
+      activeFaults
+    );
+
     const updated = {
       ...session,
       activeFaults,
+      components: updatedComponents,
+      lastResult: simulationResult,
       faultLog: [logEntry, ...session.faultLog],
     };
     updateSessionState(updated);
@@ -276,10 +348,18 @@ export default function Home() {
     if (defaultPreset) {
       const resetComps = defaultPreset.components.map(c => ({ ...c }));
       const resetConns = defaultPreset.connections.map(w => ({ ...w }));
+      const { simulationResult, updatedComponents } = syncDynamicSimulation(
+        currentExperiment,
+        resetComps,
+        resetConns,
+        session.parameters,
+        session.activeFaults
+      );
       updateSessionState({
         ...session,
-        components: resetComps,
+        components: updatedComponents,
         connections: resetConns,
+        lastResult: simulationResult,
       });
       addToast('info', 'Reset to Default Preset', 'Apparatus layout restored.');
     }
@@ -300,10 +380,20 @@ export default function Home() {
       defaultParams[p.id] = p.defaultValue;
     });
 
+    const { simulationResult, updatedComponents } = syncDynamicSimulation(
+      currentExperiment,
+      session.components,
+      session.connections,
+      defaultParams,
+      []
+    );
+
     updateSessionState({
       ...session,
       parameters: defaultParams,
       activeFaults: [],
+      components: updatedComponents,
+      lastResult: simulationResult,
     });
     addToast('info', 'Parameters Reset', 'Default experimental parameters restored.');
   };
@@ -328,6 +418,16 @@ export default function Home() {
     });
   };
 
+  const handleCompleteSession = () => {
+    const { session: evaluated, grade } = evaluateAndCompleteSession(session, currentExperiment);
+    setSession(evaluated);
+    addToast(
+      grade.status === 'EXCELLENT' || grade.status === 'PASSED' ? 'success' : 'warning',
+      `Laboratory Evaluated: ${grade.score}/100 (${grade.status})`,
+      `Scientific Accuracy: ${grade.accuracyPercentage}%. Official completion certificate issued.`
+    );
+  };
+
   const handleDeleteObservation = (id: string) => {
     const nextObs = session.observations.filter(o => o.id !== id);
     updateSessionState({
@@ -345,13 +445,21 @@ export default function Home() {
     addToast('info', 'Log Cleared', 'All observation records removed.');
   };
 
-  if (activeTab === 'landing') {
-    return <LandingPage isAuthenticated={isAuthenticated} userDisplayName={userDisplayName} />;
+  // SSR Safe Guard: Render Landing Page during initial server render pass
+  if (!isMounted || activeTab === 'landing') {
+    return (
+      <LandingPage
+        isAuthenticated={isAuthenticated}
+        userDisplayName={userDisplayName}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+      />
+    );
   }
 
   return (
     <div className={`min-h-screen font-sans selection:bg-cyan-500 selection:text-slate-950 flex flex-col transition-colors ${
-      isDark ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900'
+      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
     }`}>
       
       {/* Toast Notification Container */}
@@ -412,6 +520,10 @@ export default function Home() {
             activeFaults={session.activeFaults}
             mode={session.mode}
             lastResult={session.lastResult}
+            completedSteps={session.completedSteps}
+            isCompleted={session.isCompleted}
+            grade={session.grade}
+            observationCount={session.observations.length}
             onUpdateComponents={handleUpdateComponents}
             onUpdateConnections={handleUpdateConnections}
             onParameterChange={handleParameterChange}
@@ -423,6 +535,9 @@ export default function Home() {
             onClearCanvas={handleClearCanvas}
             onResetControls={handleResetControls}
             onOpenTutor={() => handleTabChange('tutor')}
+            onToggleStep={handleToggleStep}
+            onCompleteSession={handleCompleteSession}
+            onNavigateToReport={() => handleTabChange('report')}
             theme={theme}
           />
         )}
@@ -476,10 +591,10 @@ export default function Home() {
         isDark ? 'border-slate-900 bg-slate-950 text-slate-500' : 'border-slate-200 bg-white text-slate-500'
       }`}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>LabVerse Science Platform • Phase 2 Production Architecture</span>
+          <span>LabVerse Science Platform • Deterministic Numerical Engines</span>
           <button
             onClick={() => setPrivacyModalOpen(true)}
-            className="hover:underline text-cyan-400 font-medium cursor-pointer"
+            className="hover:underline text-cyan-600 dark:text-cyan-400 font-medium cursor-pointer"
           >
             Privacy & Student Data Security
           </button>

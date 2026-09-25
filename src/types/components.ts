@@ -1,4 +1,4 @@
-export type DomainCategory = 'ELECTRONICS' | 'MECHANICS' | 'OPTICS' | 'QUANTUM' | 'NUCLEAR' | 'BIOLOGY' | 'CHEMISTRY';
+export type DomainCategory = 'ELECTRONICS' | 'MECHANICS' | 'OPTICS' | 'QUANTUM' | 'NUCLEAR' | 'BIOLOGY' | 'CHEMISTRY' | 'FINANCE';
 
 export type ComponentType =
   // Electronics
@@ -9,7 +9,9 @@ export type ComponentType =
   | 'AMMETER'
   | 'VOLTMETER'
   | 'SWITCH'
+  | 'GROUND'
   | 'BULB'
+  | 'LIGHT_BULB'
   | 'LED'
   | 'WIRE'
   | 'FUSE'
@@ -24,14 +26,22 @@ export type ComponentType =
   | 'MONOCHROMATOR'
   | 'OPTICAL_BENCH'
   // Nuclear
+  | 'ALPHA_SOURCE'
   | 'ALPHA_EMITTER'
   | 'GOLD_FOIL'
+  | 'SCATTER_DETECTOR'
   | 'SCATTERING_DETECTOR'
   // Biology / Chemistry
+  | 'ELECTROPHORESIS_TANK'
   | 'GEL_TRAY'
   | 'POWER_SUPPLY'
   | 'PIPETTE'
-  | 'DNA_WELLS';
+  | 'DNA_WELLS'
+  | 'BEAKER'
+  | 'SPECTROPHOTOMETER'
+  // Finance
+  | 'FINANCE_CHART'
+  | 'PORTFOLIO_LEDGER';
 
 export interface Terminal {
   id: string;

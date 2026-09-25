@@ -1,4 +1,10 @@
-import { createInitialSession, loadExperimentSession, exportObservationsToCSV, CURRENT_SESSION_SCHEMA_VERSION } from './storage';
+import { 
+  createInitialSession, 
+  loadExperimentSession, 
+  exportObservationsToCSV, 
+  evaluateAndCompleteSession,
+  CURRENT_SESSION_SCHEMA_VERSION 
+} from './storage';
 import { getExperiment } from '../experiments/registry';
 import { ObservationRecord } from '@/types';
 
@@ -118,6 +124,52 @@ function runSessionTests() {
     throw new Error('Failed to recover gracefully from broken JSON in localStorage');
   }
   console.log('✓ Test 3B (Malformed Recovery) Passed!');
+
+  // Test 4: evaluateAndCompleteSession assigns score and marks isCompleted
+  console.log('\nTest 4: evaluateAndCompleteSession calculates grades and completes session...');
+  const testSession = createInitialSession(exp, 'GUIDED');
+  testSession.completedSteps = [1, 2, 3];
+  testSession.observations = [
+    {
+      id: 'obs-1',
+      timestamp: '10:00:00',
+      runIndex: 1,
+      parameters: { voltage: 6, resistance: 20 },
+      measurements: { current_meas: 0.30 },
+      theoreticalValues: { current_meas: 0.30 },
+      faultsActive: []
+    },
+    {
+      id: 'obs-2',
+      timestamp: '10:02:00',
+      runIndex: 2,
+      parameters: { voltage: 12, resistance: 20 },
+      measurements: { current_meas: 0.60 },
+      theoreticalValues: { current_meas: 0.60 },
+      faultsActive: []
+    },
+    {
+      id: 'obs-3',
+      timestamp: '10:04:00',
+      runIndex: 3,
+      parameters: { voltage: 18, resistance: 20 },
+      measurements: { current_meas: 0.90 },
+      theoreticalValues: { current_meas: 0.90 },
+      faultsActive: []
+    }
+  ];
+
+  const { session: completedSession, grade } = evaluateAndCompleteSession(testSession, exp);
+  if (!completedSession.isCompleted) {
+    throw new Error('Session isCompleted must be true after evaluation');
+  }
+  if (grade.score < 80) {
+    throw new Error(`Expected score >= 80 for nominal runs, got ${grade.score}`);
+  }
+  if (grade.accuracyPercentage !== 100) {
+    throw new Error(`Expected 100% accuracy for exact matching observations, got ${grade.accuracyPercentage}%`);
+  }
+  console.log(`✓ Test 4 Passed! (Score: ${grade.score}/100, Accuracy: ${grade.accuracyPercentage}%, Status: ${grade.status})`);
 
   console.log('\n🎉 ALL SESSION & SCHEMA TESTS PASSED SUCCESSFULLY!');
 }

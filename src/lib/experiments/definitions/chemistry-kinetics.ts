@@ -140,14 +140,14 @@ export const chemistryKineticsExperiment: ExperimentDefinition = {
   ],
 
   analysis: {
-    xAxisLabel: 'Reciprocal Temperature (1/T)',
-    xAxisKey: 'inv_temp',
-    xAxisUnit: 'x 10⁻³ K⁻¹',
-    yAxisLabel: 'Natural Log Rate Constant ln(k)',
+    xAxisLabel: 'Reaction Temperature (T)',
+    xAxisKey: 'temperature',
+    xAxisUnit: '°C',
+    yAxisLabel: 'Reaction Rate Constant (k)',
     yAxisKey: 'rate_k_meas',
-    yAxisUnit: '',
-    expectedSlopeFormula: 'Slope = -Ea / R',
-    theoreticalRelationshipDescription: 'Plotting ln(k) against 1/T yields a linear graph with slope -Ea/R. Multiplying by -R = -8.314 J/mol·K directly calculates the activation energy Ea = 52.3 kJ/mol.'
+    yAxisUnit: 'x10⁻³ L/mol·s',
+    expectedSlopeFormula: 'k = A e^{-\\frac{E_a}{R T}}',
+    theoreticalRelationshipDescription: 'Plotting ln(k) against 1/T yields a linear Arrhenius plot with slope -Ea/R, confirming the activation energy Ea = 52.3 kJ/mol.'
   },
 
   tutorContext: {

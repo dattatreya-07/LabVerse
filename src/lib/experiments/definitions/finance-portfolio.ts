@@ -151,14 +151,14 @@ export const financePortfolioExperiment: ExperimentDefinition = {
   ],
 
   analysis: {
-    xAxisLabel: 'Portfolio Volatility (σp)',
-    xAxisKey: 'volatility',
+    xAxisLabel: 'Equity Weight (w₁)',
+    xAxisKey: 'equity_weight',
     xAxisUnit: '%',
     yAxisLabel: 'Expected Return E(Rp)',
     yAxisKey: 'return_meas',
     yAxisUnit: '%',
-    expectedSlopeFormula: 'Sharpe = [E(Rp) - Rf] / σp',
-    theoreticalRelationshipDescription: 'Plotting expected return against portfolio standard deviation maps the parabolic Markowitz Efficient Frontier curve.'
+    expectedSlopeFormula: 'E(R_p) = w_1 R_1 + (1-w_1) R_2',
+    theoreticalRelationshipDescription: 'Plotting expected return against portfolio weight maps the linear expected return curve and the parabolic Markowitz variance frontier.'
   },
 
   tutorContext: {

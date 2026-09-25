@@ -332,14 +332,14 @@ export const EXPERIMENT_CATALOG: ExperimentDefinition[] = [
       }
     ],
     analysis: {
-      xAxisLabel: 'DNA Size log(BP)',
-      xAxisKey: 'log_bp',
-      xAxisUnit: 'log₁₀(bp)',
-      yAxisLabel: 'Migration Distance',
+      xAxisLabel: 'Applied Voltage (V)',
+      xAxisKey: 'voltage',
+      xAxisUnit: 'V',
+      yAxisLabel: '500bp Band Migration (d)',
       yAxisKey: 'mig_500bp',
       yAxisUnit: 'mm',
-      expectedSlopeFormula: 'd = A - B*log(BP)',
-      theoreticalRelationshipDescription: 'Plotting migration distance against log10 of fragment length yields a linear standard curve for sizing unknown DNA samples.'
+      expectedSlopeFormula: 'd \\propto V',
+      theoreticalRelationshipDescription: 'Plotting migration distance against applied electric field voltage confirms linear electrophoretic velocity through the agarose matrix.'
     },
     tutorContext: {
       experimentId: 'gel-electrophoresis',

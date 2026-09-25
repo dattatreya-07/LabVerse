@@ -207,12 +207,12 @@ export const antennaRadiationExperiment: ExperimentDefinition = {
   ],
   analysis: {
     xAxisLabel: 'Radial Distance r',
-    xAxisKey: 'distance',
+    xAxisKey: 'probeDistance',
     xAxisUnit: 'm',
     yAxisLabel: 'Electric Field Strength E',
-    yAxisKey: 'eField',
+    yAxisKey: 'e_field',
     yAxisUnit: 'V/m',
-    expectedSlopeFormula: 'E \\propto 1 / r',
+    expectedSlopeFormula: 'E \\propto \\frac{1}{r}',
     theoreticalRelationshipDescription: 'Inverse radial distance attenuation E(r) = sqrt(30 * Pt * G) / r according to Poynting theorem.'
   },
   report: {

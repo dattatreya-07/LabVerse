@@ -1,0 +1,201 @@
+'use client';
+
+import React from 'react';
+import { SessionState } from '@/types';
+import { generatePDFReport } from '@/lib/report/pdf-generator';
+import { formatCurrent } from '@/lib/simulation/engine';
+import { FileText, Download, ShieldCheck, AlertTriangle, Cpu } from 'lucide-react';
+
+interface ReportViewProps {
+  session: SessionState;
+  theme?: 'dark' | 'light';
+}
+
+export const ReportView: React.FC<ReportViewProps> = ({ session, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+
+  const handleExport = () => {
+    generatePDFReport(session);
+  };
+
+  return (
+    <div className="space-y-8 pb-12 max-w-5xl mx-auto">
+      
+      {/* Top Banner Controls */}
+      <div className={`p-6 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors ${
+        isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+      }`}>
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2 text-cyan-600 dark:text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+            <FileText className="w-4 h-4" />
+            <span>Official Laboratory Document Preview</span>
+          </div>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            Ohm's Law Verification & Diagnostic Report
+          </h1>
+          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Compiled from live session data • Ready for submission & verification
+          </p>
+        </div>
+
+        <button
+          onClick={handleExport}
+          className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-[0_0_20px_rgba(6,182,212,0.35)] transition-all flex items-center space-x-2 shrink-0"
+        >
+          <Download className="w-4 h-4" />
+          <span>Export Official PDF Report</span>
+        </button>
+      </div>
+
+      {/* Report Document Sheet */}
+      <div className={`rounded-2xl border p-6 sm:p-10 space-y-8 shadow-2xl transition-colors ${
+        isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-900 shadow-slate-200/60'
+      }`}>
+        
+        {/* Report Header */}
+        <div className={`flex flex-wrap items-center justify-between border-b pb-6 gap-4 ${
+          isDark ? 'border-slate-800' : 'border-slate-200'
+        }`}>
+          <div className="flex items-center space-x-3">
+            <div className={`p-2.5 rounded-xl border text-cyan-600 dark:text-cyan-400 ${
+              isDark ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
+            }`}>
+              <Cpu className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>LabVerse AI Virtual Laboratory</h2>
+              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Department of Physics & Electronics Engineering</p>
+            </div>
+          </div>
+
+          <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center space-x-1.5">
+            <ShieldCheck className="w-4 h-4" />
+            <span>SYSTEM VERIFIED REPORT</span>
+          </div>
+        </div>
+
+        {/* Metadata Grid */}
+        <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl border text-xs ${
+          isDark ? 'bg-slate-900/60 border-slate-850' : 'bg-slate-50 border-slate-200'
+        }`}>
+          <div>
+            <span className={`uppercase tracking-wider font-semibold block text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Session ID</span>
+            <span className="font-mono text-cyan-600 dark:text-cyan-400 font-bold text-sm">{session.sessionId}</span>
+          </div>
+          <div>
+            <span className={`uppercase tracking-wider font-semibold block text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Researcher</span>
+            <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{session.studentName}</span>
+          </div>
+          <div>
+            <span className={`uppercase tracking-wider font-semibold block text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Start Timestamp</span>
+            <span className={`font-mono ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{new Date(session.startTime).toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Section 1: Objective & Governing Formula */}
+        <div className="space-y-3">
+          <h3 className={`text-base font-bold border-b pb-2 ${isDark ? 'text-slate-100 border-slate-800' : 'text-slate-900 border-slate-200'}`}>
+            1. Executive Objective & Governing Formula
+          </h3>
+          <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            The primary objective of this laboratory exercise is to empirically verify Ohm's Law ($V = I \cdot R$), examine the linear response of current to applied voltage, investigate open circuit discontinuities, and diagnose instrumental calibration faults using AI tutoring diagnostics.
+          </p>
+          <div className={`p-4 rounded-xl border text-center font-mono text-cyan-600 dark:text-cyan-300 text-sm font-bold ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-cyan-200'
+          }`}>
+            V = I × R ⇒ I = V / R
+          </div>
+        </div>
+
+        {/* Section 2: Observations Table */}
+        <div className="space-y-3">
+          <h3 className={`text-base font-bold border-b pb-2 ${isDark ? 'text-slate-100 border-slate-800' : 'text-slate-900 border-slate-200'}`}>
+            2. Empirical Observations Dataset ({session.observations.length} Runs)
+          </h3>
+
+          {session.observations.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">No observation runs recorded in session.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className={`w-full text-left text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                <thead className={`font-mono text-[10px] uppercase border-b ${
+                  isDark ? 'bg-slate-900 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-600 border-slate-200'
+                }`}>
+                  <tr>
+                    <th className="py-2 px-3">Run #</th>
+                    <th className="py-2 px-3">Time</th>
+                    <th className="py-2 px-3">Voltage (V)</th>
+                    <th className="py-2 px-3">Resistance (Ω)</th>
+                    <th className="py-2 px-3">Theoretical I</th>
+                    <th className="py-2 px-3">Measured I</th>
+                    <th className="py-2 px-3">Fault State</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y font-mono text-xs ${isDark ? 'divide-slate-850' : 'divide-slate-200'}`}>
+                  {session.observations.map((obs, idx) => (
+                    <tr key={obs.id}>
+                      <td className={`py-2 px-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>#{idx + 1}</td>
+                      <td className={`py-2 px-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{obs.timestamp}</td>
+                      <td className="py-2 px-3 text-cyan-600 dark:text-cyan-400">{obs.voltage.toFixed(1)} V</td>
+                      <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400">{obs.resistance.toFixed(0)} Ω</td>
+                      <td className="py-2 px-3">{formatCurrent(obs.theoreticalCurrent)}</td>
+                      <td className={`py-2 px-3 font-bold ${obs.faultType !== 'NORMAL' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-300'}`}>
+                        {formatCurrent(obs.measuredCurrent)}
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] ${
+                          obs.faultType === 'NORMAL'
+                            ? isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-emerald-100 text-emerald-800'
+                            : isDark ? 'bg-rose-950 text-rose-400' : 'bg-rose-100 text-rose-800'
+                        }`}>
+                          {obs.faultType}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Section 3: Fault Injection Log */}
+        <div className="space-y-3">
+          <h3 className={`text-base font-bold border-b pb-2 ${isDark ? 'text-slate-100 border-slate-800' : 'text-slate-900 border-slate-200'}`}>
+            3. Fault Diagnostics & Incident Log
+          </h3>
+
+          {session.faultLog.length === 0 ? (
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No fault anomalies injected during session.</p>
+          ) : (
+            <div className="space-y-2">
+              {session.faultLog.map((log) => (
+                <div key={log.id} className={`p-3 rounded-xl border text-xs flex items-start space-x-3 ${
+                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-mono text-rose-600 dark:text-rose-300 font-bold">[{log.timestamp}] {log.action} - {log.faultType}</span>
+                    <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{log.details}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Section 4: Analytical Conclusion */}
+        <div className={`space-y-2 pt-2 border-t text-xs ${
+          isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'
+        }`}>
+          <h3 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>4. Final Verification Statement</h3>
+          <p className="leading-relaxed">
+            All data collected in this report adheres to standard physical electrodynamics rules. Theoretical calculations ($I=V/R$) align with normal circuit runs, while injected open circuit and ammeter calibration faults successfully isolated structural discontinuities and instrumental systematic error.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  );
+};

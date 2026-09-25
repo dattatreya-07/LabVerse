@@ -1,12 +1,30 @@
 'use client';
 
-import React from 'react';
-import { Cpu, RotateCcw, FileText, Bot, Play, BookOpen, Sun, Moon, AlertTriangle, LineChart, Compass } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Cpu, 
+  RotateCcw, 
+  FileText, 
+  Bot, 
+  Play, 
+  BookOpen, 
+  Sun, 
+  Moon, 
+  AlertTriangle, 
+  LineChart, 
+  Compass, 
+  LayoutDashboard,
+  Menu,
+  X,
+  UserCheck
+} from 'lucide-react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 
+export type NavTab = 'dashboard' | 'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report';
+
 interface HeaderProps {
-  activeTab: 'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report';
-  setActiveTab: (tab: 'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report') => void;
+  activeTab: NavTab;
+  setActiveTab: (tab: NavTab) => void;
   session: ExperimentSession;
   experiment: ExperimentDefinition;
   onResetSession: () => void;
@@ -23,8 +41,19 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
 }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDark = theme === 'dark';
   const hasFaults = session.activeFaults.length > 0;
+
+  const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" /> },
+    { id: 'catalog', label: 'Catalog', icon: <Compass className="w-3.5 h-3.5 text-sky-400" /> },
+    { id: 'prep', label: 'Theory', icon: <BookOpen className="w-3.5 h-3.5 text-amber-400" /> },
+    { id: 'lab', label: 'Virtual Lab', icon: <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" /> },
+    { id: 'analysis', label: 'Data & Plots', icon: <LineChart className="w-3.5 h-3.5 text-cyan-400" /> },
+    { id: 'tutor', label: 'AI Tutor', icon: <Bot className="w-3.5 h-3.5 text-indigo-400" />, badge: 'AI' },
+    { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5 text-cyan-400" /> },
+  ];
 
   return (
     <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors ${
@@ -35,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Brand Logo & Active Module */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('catalog')}>
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
           <div className={`p-2 rounded-xl border flex items-center justify-center transition-all ${
             isDark
               ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
@@ -62,104 +91,32 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center space-x-1 sm:space-x-1.5">
-          <button
-            onClick={() => setActiveTab('catalog')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'catalog'
-                ? isDark
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
-                : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Catalog</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('prep')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'prep'
-                ? isDark
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
-                : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Theory</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('lab')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'lab'
-                ? isDark
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-bold'
-                  : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
-                : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/20" />
-            <span>Virtual Lab</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('analysis')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'analysis'
-                ? isDark
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
-                : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <LineChart className="w-3.5 h-3.5 text-cyan-500" />
-            <span className="hidden lg:inline">Data & Plots</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tutor')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all relative ${
-              activeTab === 'tutor'
-                ? isDark
-                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                  : 'bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold'
-                : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="hidden md:inline">AI Tutor</span>
-            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping absolute -top-0.5 -right-0.5" />
-          </button>
-
-          <button
-            onClick={() => setActiveTab('report')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'report'
-                ? isDark
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
-                : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5 text-cyan-500" />
-            <span className="hidden md:inline">Report</span>
-          </button>
+        {/* Desktop Navigation Tabs */}
+        <nav className="hidden md:flex items-center space-x-1">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+                  isActive
+                    ? isDark
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                      : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
+                    : isDark
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping absolute -top-0.5 -right-0.5" />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Right Session Status & Theme Toggle */}
@@ -170,6 +127,12 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Fault Active</span>
             </div>
           )}
+
+          {/* Student / Session Badge */}
+          <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono bg-cyan-500/10 border-cyan-500/20 text-cyan-400">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span className="font-semibold">{session.mode}</span>
+          </div>
 
           {/* Theme Toggle Button */}
           <button
@@ -184,13 +147,6 @@ export const Header: React.FC<HeaderProps> = ({
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <div className="hidden sm:flex flex-col text-right">
-            <span className={`text-[10px] uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Session
-            </span>
-            <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 font-semibold">{session.sessionId}</span>
-          </div>
-
           <button
             onClick={onResetSession}
             title="Reset Active Experiment Session"
@@ -202,9 +158,53 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <RotateCcw className="w-4 h-4" />
           </button>
+
+          {/* Mobile Hamburger Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className={`md:hidden p-2 rounded-lg border transition-colors ${
+              isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'
+            }`}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
 
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className={`md:hidden border-b p-4 space-y-2 transition-all ${
+          isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200 shadow-lg'
+        }`}>
+          <div className="grid grid-cols-2 gap-2">
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-2 p-2.5 rounded-lg text-xs font-semibold transition-all ${
+                    isActive
+                      ? isDark
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
+                        : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
+                      : isDark
+                      ? 'bg-slate-900 text-slate-400 hover:text-slate-200'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

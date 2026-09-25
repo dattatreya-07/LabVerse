@@ -51,17 +51,21 @@ export const ExperimentPrep: React.FC<ExperimentPrepProps> = ({
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {experiment.learningObjectives.map((obj) => (
-            <div
-              key={obj.id}
-              className={`p-3.5 rounded-xl border flex items-start space-x-2.5 text-xs ${
-                isDark ? 'bg-slate-950/60 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
-              <span>{obj.description}</span>
-            </div>
-          ))}
+          {experiment.learningObjectives.map((obj, i) => {
+            const desc = typeof obj === 'string' ? obj : obj.description;
+            const objId = typeof obj === 'string' ? `obj-${i}` : obj.id || `obj-${i}`;
+            return (
+              <div
+                key={objId}
+                className={`p-3.5 rounded-xl border flex items-start space-x-2.5 text-xs ${
+                  isDark ? 'bg-slate-950/60 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
+                <span>{desc}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

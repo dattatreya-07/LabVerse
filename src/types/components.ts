@@ -53,7 +53,7 @@ export interface LabComponent {
   };
   rotation?: number; // In degrees: 0, 90, 180, 270
   terminals: Terminal[];
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   state: {
     isPowered?: boolean;
     isOpen?: boolean; // For switches
@@ -61,7 +61,7 @@ export interface LabComponent {
     faultId?: string;
     displayValue?: string;
     valueNumber?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

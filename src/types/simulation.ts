@@ -43,7 +43,7 @@ export interface VisualSimulationState {
   electronVelocity?: number;
   activePathIds?: string[];
   meterReadings?: Record<string, number | string>;
-  componentStates?: Record<string, any>;
+  componentStates?: Record<string, unknown>;
   waveforms?: Array<{ x: number; y: number }>;
 }
 

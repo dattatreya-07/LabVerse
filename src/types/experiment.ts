@@ -17,7 +17,7 @@ export interface EquipmentDefinition {
   title: string;
   description: string;
   domain: DomainCategory;
-  defaultProperties: Record<string, any>;
+  defaultProperties: Record<string, unknown>;
   terminals: Array<{
     id: string;
     name: string;

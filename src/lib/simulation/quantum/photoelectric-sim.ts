@@ -3,8 +3,7 @@ import { SimulationInput, SimulationResult, Measurement } from '@/types';
 // Constants
 const H_PLANCK = 6.62607015e-34; // J*s
 const C_LIGHT = 299792458; // m/s
-const E_CHARGE = 1.602176634e-19; // Coulombs
-const EV_TO_JOULE = 1.602176634e-19;
+const EV_TO_JOULE = 1.602176634e-19; // Joules per eV
 
 export function simulatePhotoelectric(input: SimulationInput): SimulationResult {
   const { parameters, activeFaults } = input;

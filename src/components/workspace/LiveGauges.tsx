@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Measurement, SimulationResult } from '@/types';
-import { Activity, Zap, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { SimulationResult } from '@/types';
+import { CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface LiveGaugesProps {
   result: SimulationResult | null;

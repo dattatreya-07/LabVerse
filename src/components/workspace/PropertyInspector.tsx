@@ -21,7 +21,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
 
   if (!component) return null;
 
-  const handlePropertyChange = (key: string, value: any) => {
+  const handlePropertyChange = (key: string, value: unknown) => {
     const nextProperties = {
       ...component.properties,
       [key]: value,
@@ -66,14 +66,16 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between font-semibold">
                 <span>DC Voltage Output:</span>
-                <span className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{component.properties?.voltage || 6.0} V</span>
+                <span className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">
+                  {typeof component.properties?.voltage === 'number' ? component.properties.voltage : 6.0} V
+                </span>
               </div>
               <input
                 type="range"
                 min="0.5"
                 max="30"
                 step="0.5"
-                value={component.properties?.voltage || 6.0}
+                value={typeof component.properties?.voltage === 'number' ? component.properties.voltage : 6.0}
                 onChange={(e) => handlePropertyChange('voltage', parseFloat(e.target.value))}
                 className="w-full accent-cyan-500 cursor-pointer"
               />
@@ -84,14 +86,16 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between font-semibold">
                 <span>Resistance Value:</span>
-                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{component.properties?.resistance || 20.0} Ω</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                  {typeof component.properties?.resistance === 'number' ? component.properties.resistance : 20.0} Ω
+                </span>
               </div>
               <input
                 type="range"
                 min="1"
                 max="1000"
                 step="1"
-                value={component.properties?.resistance || 20.0}
+                value={typeof component.properties?.resistance === 'number' ? component.properties.resistance : 20.0}
                 onChange={(e) => handlePropertyChange('resistance', parseFloat(e.target.value))}
                 className="w-full accent-emerald-500 cursor-pointer"
               />

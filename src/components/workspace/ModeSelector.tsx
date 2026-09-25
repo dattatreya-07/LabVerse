@@ -17,7 +17,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
 }) => {
   const isDark = theme === 'dark';
 
-  const modes: Array<{ id: LearningMode; label: string; icon: any; desc: string }> = [
+  const modes: Array<{ id: LearningMode; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }> = [
     { id: 'GUIDED', label: 'Guided Mode', icon: Compass, desc: 'Step-by-step breadcrumbs & checks' },
     { id: 'PRACTICE', label: 'Practice Mode', icon: HelpCircle, desc: 'Self-guided with diagnostic hints' },
     { id: 'CHALLENGE', label: 'Challenge Mode', icon: Trophy, desc: 'Target objectives & tolerances' },

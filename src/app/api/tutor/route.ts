@@ -128,7 +128,7 @@ function generateCuratedResponse(
   const lower = q.toLowerCase();
 
   // Fault 1: Open circuit
-  if (activeFaults?.includes('FAULT_OPEN_CIRCUIT') || latestResult?.topology?.circuitTopology === 'OPEN') {
+  if (activeFaults?.includes('FAULT_OPEN_CIRCUIT') || latestResult?.topology?.circuitTopology === 'OPEN' || lower.includes('zero') || lower.includes('open')) {
     return `### 🔍 Open Circuit Discontinuity Diagnosis
 Currently, the circuit has an **Open Circuit Discontinuity**.
 

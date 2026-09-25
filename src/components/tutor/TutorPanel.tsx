@@ -58,7 +58,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
     if (!textToSend.trim() || isLoading) return;
 
     const userMsg: ChatMessage = {
-      id: `usr-${Date.now()}`,
+      id: `usr-${crypto.randomUUID()}`,
       sender: 'user',
       text: textToSend.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -90,7 +90,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
       const data: TutorResponse = await res.json();
 
       const tutorMsg: ChatMessage = {
-        id: `tutor-${Date.now()}`,
+        id: `tutor-${crypto.randomUUID()}`,
         sender: 'tutor',
         text: data.answer,
         sources: data.sources,
@@ -102,7 +102,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
     } catch (err) {
       console.error('Failed to contact tutor service:', err);
       const errorMsg: ChatMessage = {
-        id: `err-${Date.now()}`,
+        id: `err-${crypto.randomUUID()}`,
         sender: 'tutor',
         text: "⚠️ **Tutor Service Unavailable**: Unable to reach the server handler. Please verify network connection or try again.",
         isCuratedFallback: true,

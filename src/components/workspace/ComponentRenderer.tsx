@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { LabComponent, Terminal } from '@/types';
-import { getResistorColorBands, formatCurrent } from '@/lib/simulation/engine';
-import { RotateCw, Trash2, Sliders, ToggleLeft, ToggleRight } from 'lucide-react';
+import { getResistorColorBands } from '@/lib/simulation/engine';
 
 interface ComponentRendererProps {
   component: LabComponent;
@@ -37,7 +36,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     switch (component.type) {
       case 'BATTERY':
       case 'DC_SUPPLY': {
-        const voltage = component.properties?.voltage || 6.0;
+        const voltage = typeof component.properties?.voltage === 'number' ? component.properties.voltage : 6.0;
         return (
           <g>
             <rect x="-45" y="-35" width="90" height="70" rx="10" fill={isDark ? "#0f172a" : "#ffffff"} stroke="#0284c7" strokeWidth="3" />
@@ -56,7 +55,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
 
       case 'RESISTOR':
       case 'VARIABLE_RESISTOR': {
-        const resistance = component.properties?.resistance || 20.0;
+        const resistance = typeof component.properties?.resistance === 'number' ? component.properties.resistance : 20.0;
         const colorBands = getResistorColorBands(resistance);
         return (
           <g>
@@ -73,8 +72,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       }
 
       case 'AMMETER': {
-        const displayVal = component.state?.displayValue || '0.00 A';
-        const numVal = component.state?.valueNumber || 0;
+        const displayVal = typeof component.state?.displayValue === 'string' ? component.state.displayValue : '0.00 A';
+        const numVal = typeof component.state?.valueNumber === 'number' ? component.state.valueNumber : 0;
         const needleAngle = Math.min(180, Math.max(0, (numVal / 2.5) * 180)) - 90;
         return (
           <g>
@@ -111,7 +110,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       }
 
       case 'SWITCH': {
-        const isOpen = component.state?.isOpen;
+        const isOpen = !!component.state?.isOpen;
         return (
           <g onClick={() => onToggleSwitch && onToggleSwitch(component)} className="cursor-pointer">
             <rect x="-40" y="-25" width="80" height="50" rx="8" fill={isDark ? "#0f172a" : "#ffffff"} stroke={isOpen ? "#f43f5e" : "#10b981"} strokeWidth="2.5" />
@@ -130,7 +129,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       }
 
       case 'PENDULUM': {
-        const length = component.properties?.length || 1.0;
+        const length = typeof component.properties?.length === 'number' ? component.properties.length : 1.0;
         return (
           <g>
             <rect x="-35" y="-10" width="70" height="16" rx="4" fill="#64748b" />

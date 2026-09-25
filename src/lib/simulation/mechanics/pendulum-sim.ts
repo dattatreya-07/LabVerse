@@ -9,7 +9,7 @@ export function simulatePendulum(input: SimulationInput): SimulationResult {
   const angleDeg = parameters['initial_angle'] ?? 15.0; // degrees
 
   // Theoretical small-angle period T = 2*pi*sqrt(L/g)
-  let theoreticalPeriod = 2 * Math.PI * Math.sqrt(length / gravity);
+  const theoreticalPeriod = 2 * Math.PI * Math.sqrt(length / gravity);
   
   // High amplitude correction (Borda / Bernouilli series approximation)
   const angleRad = (angleDeg * Math.PI) / 180;
@@ -64,6 +64,7 @@ export function simulatePendulum(input: SimulationInput): SimulationResult {
       period: Number(observedPeriod.toFixed(3)),
       frequency: Number(frequency.toFixed(3)),
       length,
+      mass,
       gravity,
     },
     visualState: {

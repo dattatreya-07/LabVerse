@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { EquipmentDefinition, ComponentType, LabComponent } from '@/types';
+import { EquipmentDefinition, ComponentType } from '@/types';
 import { Battery, Activity, Gauge, ToggleRight, Plus, RotateCcw, Sparkles } from 'lucide-react';
 
 interface EquipmentTrayProps {

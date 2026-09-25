@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ParameterDefinition, FaultDefinition } from '@/types';
-import { Play, Square, RotateCcw, AlertTriangle, ShieldCheck, Sliders, Zap } from 'lucide-react';
+import { Play, Square, RotateCcw, AlertTriangle, Sliders, Zap } from 'lucide-react';
 
 interface ParameterControlsProps {
   parameters: ParameterDefinition[];

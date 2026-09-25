@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ExperimentDefinition, DomainCategory } from '@/types';
+import { DomainCategory } from '@/types';
 import { getAllExperiments } from '@/lib/experiments/registry';
-import { Zap, Activity, Sun, Atom, Dna, Play, Lock, Clock, ArrowRight, BookOpen, Compass } from 'lucide-react';
+import { Zap, Activity, Sun, Atom, Dna, Play, Clock, ArrowRight, BookOpen, Compass } from 'lucide-react';
 
 interface ExperimentCatalogProps {
   onSelectExperiment: (experimentId: string) => void;
@@ -19,7 +19,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
   const allExperiments = getAllExperiments();
 
-  const domains: Array<{ id: string; label: string; icon: any }> = [
+  const domains: Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'ALL', label: 'All Domains', icon: Compass },
     { id: 'ELECTRONICS', label: 'Electronics', icon: Zap },
     { id: 'MECHANICS', label: 'Mechanics', icon: Activity },

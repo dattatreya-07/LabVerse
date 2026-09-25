@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Header } from '@/components/nav/Header';
 import { ExperimentCatalog } from '@/components/catalog/ExperimentCatalog';
 import { ExperimentPrep } from '@/components/prep/ExperimentPrep';
@@ -10,29 +10,23 @@ import { AnalysisChart } from '@/components/analysis/AnalysisChart';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { ReportView } from '@/components/report/ReportView';
 
-import { ExperimentSession, ExperimentDefinition, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
-import { getExperiment, ohmsLawExperiment } from '@/lib/experiments/registry';
+import { ExperimentSession, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
+import { getExperiment } from '@/lib/experiments/registry';
 import { loadExperimentSession, saveExperimentSession, clearExperimentSession } from '@/lib/session/storage';
 
 export default function Home() {
   const [selectedExpId, setSelectedExpId] = useState<string>('ohms-law');
-  const [currentExperiment, setCurrentExperiment] = useState<ExperimentDefinition>(ohmsLawExperiment);
-  const [session, setSession] = useState<ExperimentSession | null>(null);
+  const [session, setSession] = useState<ExperimentSession>(() => loadExperimentSession('ohms-law', 'GUIDED'));
   const [activeTab, setActiveTab] = useState<'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report'>('lab');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-
-  // Load session & theme preference from localStorage on mount
-  useEffect(() => {
-    const exp = getExperiment(selectedExpId);
-    setCurrentExperiment(exp);
-    const loaded = loadExperimentSession(selectedExpId, 'GUIDED');
-    setSession(loaded);
-
-    const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
+      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
     }
-  }, [selectedExpId]);
+    return 'dark';
+  });
+
+  const currentExperiment = getExperiment(selectedExpId);
 
   const handleToggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -42,20 +36,10 @@ export default function Home() {
 
   const handleSelectExperiment = (expId: string) => {
     setSelectedExpId(expId);
-    const exp = getExperiment(expId);
-    setCurrentExperiment(exp);
     const loaded = loadExperimentSession(expId, 'GUIDED');
     setSession(loaded);
     setActiveTab('prep');
   };
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center font-sans">
-        <div className="animate-pulse text-sm text-cyan-400 font-mono">Initializing LabVerse Modular Engine...</div>
-      </div>
-    );
-  }
 
   const isDark = theme === 'dark';
 
@@ -340,7 +324,6 @@ export default function Home() {
 
             <ObservationLog
               observations={session.observations}
-              parameters={currentExperiment.parameters}
               onDeleteObservation={handleDeleteObservation}
               onClearObservations={handleClearObservations}
               theme={theme}

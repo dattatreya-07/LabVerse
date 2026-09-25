@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { ChallengeGoal, SimulationResult } from '@/types';
-import { Trophy, CheckCircle, Target, Sparkles } from 'lucide-react';
+import { Trophy, CheckCircle, Sparkles } from 'lucide-react';
 
 interface ChallengeBannerProps {
   challenges?: ChallengeGoal[];
   activeChallengeId?: string;
-  onSelectChallenge: (id: string) => void;
+  onSelectChallenge?: (id: string) => void;
   latestResult: SimulationResult | null;
   theme?: 'dark' | 'light';
 }
@@ -15,7 +15,6 @@ interface ChallengeBannerProps {
 export const ChallengeBanner: React.FC<ChallengeBannerProps> = ({
   challenges = [],
   activeChallengeId,
-  onSelectChallenge,
   latestResult,
   theme = 'dark',
 }) => {

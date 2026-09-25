@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Cpu, RotateCcw, FileText, Bot, Play, LayoutDashboard, BookOpen, Sun, Moon, AlertTriangle, LineChart, Compass } from 'lucide-react';
+import { Cpu, RotateCcw, FileText, Bot, Play, BookOpen, Sun, Moon, AlertTriangle, LineChart, Compass } from 'lucide-react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 
 interface HeaderProps {

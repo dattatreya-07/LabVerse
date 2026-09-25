@@ -1,5 +1,5 @@
 import { ExperimentSession, ExperimentDefinition, LearningMode } from '@/types';
-import { getExperiment, ohmsLawExperiment } from '@/lib/experiments/registry';
+import { getExperiment } from '@/lib/experiments/registry';
 
 const STORAGE_KEY_PREFIX = 'labverse_session_v2_';
 

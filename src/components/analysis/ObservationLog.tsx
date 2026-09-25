@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import { ObservationRecord, ParameterDefinition } from '@/types';
+import { ObservationRecord } from '@/types';
 import { Table, Trash2, Download, FileSpreadsheet, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface ObservationLogProps {
   observations: ObservationRecord[];
-  parameters: ParameterDefinition[];
   onDeleteObservation: (id: string) => void;
   onClearObservations: () => void;
   theme?: 'dark' | 'light';
@@ -14,7 +13,6 @@ interface ObservationLogProps {
 
 export const ObservationLog: React.FC<ObservationLogProps> = ({
   observations,
-  parameters,
   onDeleteObservation,
   onClearObservations,
   theme = 'dark',

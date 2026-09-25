@@ -10,7 +10,7 @@ import { TopologyValidator } from './TopologyValidator';
 import { LiveGauges } from './LiveGauges';
 import { ModeSelector } from './ModeSelector';
 import { ChallengeBanner } from './ChallengeBanner';
-import { Compass, Bot, CheckCircle2 } from 'lucide-react';
+import { Compass, Bot } from 'lucide-react';
 
 interface LabWorkbenchProps {
   experiment: ExperimentDefinition;

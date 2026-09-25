@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ExperimentDefinition } from '@/types';
-import { BookOpen, CheckSquare, Square, Zap, ShieldAlert, Cpu, ArrowRight, Play, Trophy } from 'lucide-react';
+import { BookOpen, CheckSquare, Square, Zap, ShieldAlert, ArrowRight, Play, Trophy } from 'lucide-react';
 
 interface ExperimentPrepProps {
   experiment: ExperimentDefinition;

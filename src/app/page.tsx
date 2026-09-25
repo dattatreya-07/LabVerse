@@ -9,6 +9,7 @@ import { LabWorkbench } from '@/components/workspace/LabWorkbench';
 import { ObservationLog } from '@/components/analysis/ObservationLog';
 import { AnalysisChart } from '@/components/analysis/AnalysisChart';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
+import { LiveRobotTutor } from '@/components/tutor/LiveRobotTutor';
 import { ReportView } from '@/components/report/ReportView';
 import { ToastContainer, ToastMessage } from '@/components/ui/Toast';
 import { PrivacyNoticeModal } from '@/components/privacy/PrivacyNoticeModal';
@@ -602,6 +603,18 @@ export default function Home() {
           <span className="font-mono text-[11px] opacity-70">Next.js 16 • React 19 • TypeScript • Tailwind v4 • Recharts • jsPDF</span>
         </div>
       </footer>
+
+      {/* Live AI Robot Assistant (Bottom Right) */}
+      <LiveRobotTutor
+        experiment={currentExperiment}
+        components={session.components}
+        connections={session.connections}
+        parameters={session.parameters}
+        activeFaults={session.activeFaults}
+        lastResult={session.lastResult}
+        theme={theme}
+        onOpenWorkbench={() => handleTabChange('lab')}
+      />
 
       {/* Privacy & Student Data Disclosures Modal */}
       <PrivacyNoticeModal

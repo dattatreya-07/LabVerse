@@ -2,10 +2,12 @@ import { ExperimentDefinition, DomainCategory } from '@/types';
 import { ohmsLawExperiment } from './definitions/ohms-law';
 import { pendulumExperiment } from './definitions/pendulum';
 import { photoelectricExperiment } from './definitions/photoelectric';
+import { antennaRadiationExperiment } from './definitions/antenna-radiation';
 
-export { ohmsLawExperiment, pendulumExperiment, photoelectricExperiment };
+export { ohmsLawExperiment, pendulumExperiment, photoelectricExperiment, antennaRadiationExperiment };
 
 export const EXPERIMENT_CATALOG: ExperimentDefinition[] = [
+  antennaRadiationExperiment,
   ohmsLawExperiment,
   pendulumExperiment,
   photoelectricExperiment,

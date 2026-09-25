@@ -1,4 +1,4 @@
-export type DomainCategory = 'ELECTRONICS' | 'MECHANICS' | 'OPTICS' | 'QUANTUM' | 'NUCLEAR' | 'BIOLOGY' | 'CHEMISTRY';
+export type DomainCategory = 'ELECTRONICS' | 'MECHANICS' | 'OPTICS' | 'QUANTUM' | 'NUCLEAR' | 'BIOLOGY' | 'CHEMISTRY' | 'ECE';
 
 export type ComponentType =
   // Electronics
@@ -13,6 +13,10 @@ export type ComponentType =
   | 'LED'
   | 'WIRE'
   | 'FUSE'
+  // ECE / Electromagnetics
+  | 'ANTENNA_TOWER'
+  | 'RADIATION_PROBE'
+  | 'SIGNAL_GENERATOR'
   // Mechanics
   | 'PENDULUM'
   | 'MASS_HANGER'

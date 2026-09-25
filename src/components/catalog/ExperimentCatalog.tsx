@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { ExperimentDefinition, DomainCategory } from '@/types';
 import { getAllExperiments } from '@/lib/experiments/registry';
-import { Zap, Activity, Sun, Atom, Dna, Play, Lock, Clock, ArrowRight, BookOpen, Compass } from 'lucide-react';
+import { Zap, Activity, Sun, Atom, Dna, Play, Lock, Clock, ArrowRight, BookOpen, Compass, Radio } from 'lucide-react';
 
 interface ExperimentCatalogProps {
   onSelectExperiment: (experimentId: string) => void;
@@ -21,6 +21,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
   const domains: Array<{ id: string; label: string; icon: any }> = [
     { id: 'ALL', label: 'All Domains', icon: Compass },
+    { id: 'ECE', label: 'ECE (Electromagnetics)', icon: Radio },
     { id: 'ELECTRONICS', label: 'Electronics', icon: Zap },
     { id: 'MECHANICS', label: 'Mechanics', icon: Activity },
     { id: 'QUANTUM', label: 'Quantum Physics', icon: Sun },
@@ -34,6 +35,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
   const getDomainIcon = (domain: DomainCategory) => {
     switch (domain) {
+      case 'ECE': return <Radio className="w-5 h-5 text-cyan-400" />;
       case 'ELECTRONICS': return <Zap className="w-5 h-5 text-cyan-500" />;
       case 'MECHANICS': return <Activity className="w-5 h-5 text-emerald-500" />;
       case 'QUANTUM': return <Sun className="w-5 h-5 text-amber-500" />;

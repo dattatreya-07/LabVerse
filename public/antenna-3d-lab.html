@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECE 3D Virtual Lab - Antenna Radiation Patterns & EM Wave Propagation</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: #05070f; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #f1f5f9; }
+        
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* Floating Controls Panel */
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            width: 320px;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        h2 { margin: 0 0 4px 0; font-size: 18px; font-weight: 800; color: #00f0ff; letter-spacing: -0.5px; }
+        .subtitle { margin: 0 0 16px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        .control-group { margin-bottom: 14px; }
+        label { display: flex; justify-content: space-between; font-size: 12px; color: #cbd5e1; font-weight: 600; margin-bottom: 6px; }
+        label span.val { color: #00f0ff; font-family: monospace; font-weight: 700; }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+            accent-color: #00f0ff;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #00f0ff, #00a8ff);
+            border: none;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 10px;
+            color: #05070f;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+            margin-top: 6px;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 240, 255, 0.5); }
+        button:active { transform: translateY(0); }
+
+        /* Telemetry HUD Badge */
+        #telemetry-hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .hud-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 14px;
+        }
+        .hud-title { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+        .hud-val { font-size: 18px; font-weight: 800; font-family: monospace; color: #fbbf24; margin-top: 2px; }
+        .hud-unit { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+        /* Camera Drag Hint */
+        #hint-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #94a3b8;
+            font-family: monospace;
+            pointer-events: none;
+        }
+    </style>
+
+    <!-- Three.js & OrbitControls CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="hint-badge">💡 Mouse Drag: Rotate • Scroll: Zoom • Right-Click: Pan</div>
+
+    <div id="info-panel">
+        <h2>EM Wave Virtual Lab</h2>
+        <p class="subtitle">Domain: ECE (Electromagnetics)</p>
+        
+        <div class="control-group">
+            <label>Wave Frequency <span class="val" id="freq-val">1.5 GHz</span></label>
+            <input type="range" id="freq-slider" min="0.5" max="5.0" step="0.1" value="1.5">
+        </div>
+        
+        <div class="control-group">
+            <label>Transmit Power <span class="val" id="power-val">1.0 W</span></label>
+            <input type="range" id="power-slider" min="0.5" max="3.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>Probe Distance (r) <span class="val" id="probe-val">6.0 m</span></label>
+            <input type="range" id="probe-slider" min="1.0" max="20.0" step="0.5" value="6.0">
+        </div>
+
+        <button id="toggle-antenna">Antenna Topology: Dipole (Omni Torus)</button>
+    </div>
+
+    <div id="telemetry-hud">
+        <div class="hud-card">
+            <div class="hud-title">Peak Electric Field (E)</div>
+            <div class="hud-val" id="hud-e">1.17 <span class="hud-unit">V/m</span></div>
+        </div>
+        <div class="hud-card">
+            <div class="hud-title">Power Density (S)</div>
+            <div class="hud-val" id="hud-s" style="color: #38bdf8;">3.63 <span class="hud-unit">mW/m²</span></div>
+        </div>
+        <div class="hud-card">
+            <div class="hud-title">Antenna Gain</div>
+            <div class="hud-val" id="hud-gain" style="color: #34d399;">2.15 <span class="hud-unit">dBi</span></div>
+        </div>
+        <div class="hud-card">
+            <div class="hud-title">Wavelength (λ)</div>
+            <div class="hud-val" id="hud-wave" style="color: #c084fc;">20.0 <span class="hud-unit">cm</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 1. THREE.JS SCENE SETUP & CAMERA
+        // ----------------------------------------------------
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x05070f);
+        scene.fog = new THREE.FogExp2(0x05070f, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 10, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // OrbitControls for Camera Interaction
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.05;
+        controls.target.set(0, 3, 0);
+
+        // ----------------------------------------------------
+        // 2. LIGHTING & GRID ENVIRONMENT
+        // ----------------------------------------------------
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        const beaconLight = new THREE.PointLight(0xff0044, 3, 12);
+        beaconLight.position.set(0, 8.2, 0);
+        scene.add(beaconLight);
+
+        // Ground Grid
+        const gridHelper = new THREE.GridHelper(60, 60, 0x00f0ff, 0x1e293b);
+        gridHelper.position.y = 0;
+        scene.add(gridHelper);
+
+        // Platform Base Disc
+        const discGeo = new THREE.CylinderGeometry(6, 6.5, 0.4, 32);
+        const discMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.3 });
+        const disc = new THREE.Mesh(discGeo, discMat);
+        disc.position.y = -0.2;
+        scene.add(disc);
+
+        // ----------------------------------------------------
+        // 3. TOWER & ANTENNA MODELS
+        // ----------------------------------------------------
+        const towerGroup = new THREE.Group();
+        scene.add(towerGroup);
+
+        const mastMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.2 });
+        const chromeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+
+        // Central Mast
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 7.5, 16), mastMat);
+        mast.position.y = 3.75;
+        towerGroup.add(mast);
+
+        // Diagonal Lattice Supports
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI) / 2;
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 7.8, 8), mastMat);
+            leg.position.set(Math.cos(angle) * 0.9, 3.75, Math.sin(angle) * 0.9);
+            leg.rotation.z = (Math.cos(angle) * Math.PI) / 36;
+            leg.rotation.x = (Math.sin(angle) * Math.PI) / 36;
+            towerGroup.add(leg);
+        }
+
+        // Top Platform & Red Beacon Tip
+        const topPlat = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.25, 16), chromeMat);
+        topPlat.position.y = 7.5;
+        towerGroup.add(topPlat);
+
+        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
+        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), beaconMat);
+        beacon.position.y = 8.2;
+        towerGroup.add(beacon);
+
+        // Topology 0: Dipole Element
+        const dipoleHead = new THREE.Group();
+        const dipMat = new THREE.MeshStandardMaterial({ color: 0xffb703, metalness: 0.9 });
+        const dipTop = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 16), dipMat);
+        dipTop.position.y = 8.6;
+        const dipBot = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 16), dipMat);
+        dipBot.position.y = 6.4;
+        const feed = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+        feed.position.y = 7.5;
+        dipoleHead.add(dipTop, dipBot, feed);
+        towerGroup.add(dipoleHead);
+
+        // Topology 1: Parabolic Satellite Dish Head
+        const dishHead = new THREE.Group();
+        dishHead.position.y = 7.5;
+        const points = [];
+        for (let i = 0; i <= 20; i++) {
+            const t = i / 20;
+            const r = t * 2.2;
+            points.push(new THREE.Vector2(r, 0.35 * r * r));
+        }
+        const dishMesh = new THREE.Mesh(
+            new THREE.LatheGeometry(points, 32),
+            new THREE.MeshStandardMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide, metalness: 0.8 })
+        );
+        dishMesh.rotation.x = -Math.PI / 2;
+        dishHead.add(dishMesh);
+        towerGroup.add(dishHead);
+
+        // Topology 2: Yagi-Uda Array Head
+        const yagiHead = new THREE.Group();
+        yagiHead.position.y = 7.5;
+        const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.2, 8), mastMat);
+        boom.rotation.x = Math.PI / 2;
+        yagiHead.add(boom);
+        [-1.2, -0.5, 0.2, 0.8, 1.4].forEach((z, idx) => {
+            const el = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.0 - idx * 0.12, 8), dipMat);
+            el.position.z = z;
+            yagiHead.add(el);
+        });
+        towerGroup.add(yagiHead);
+
+        // ----------------------------------------------------
+        // 4. ANIMATED CONCENTRIC SPHERICAL EM WAVES
+        // ----------------------------------------------------
+        const NUM_WAVES = 8;
+        const waveSpheres = [];
+        const waveMats = [];
+        const waveGroup = new THREE.Group();
+        waveGroup.position.y = 7.5;
+        scene.add(waveGroup);
+
+        for (let i = 0; i < NUM_WAVES; i++) {
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), mat);
+            waveGroup.add(mesh);
+            waveSpheres.push(mesh);
+            waveMats.push(mat);
+        }
+
+        // ----------------------------------------------------
+        // 5. 3D RADIATION PATTERN MESHES (Torus / Beam Cone)
+        // ----------------------------------------------------
+        const patternGroup = new THREE.Group();
+        patternGroup.position.y = 7.5;
+        scene.add(patternGroup);
+
+        // Donut Torus (Dipole)
+        const torusMat = new THREE.MeshStandardMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.45,
+            emissive: 0x004466,
+            metalness: 0.4
+        });
+        const torusMesh = new THREE.Mesh(new THREE.TorusGeometry(4.5, 1.8, 32, 64), torusMat);
+        torusMesh.rotation.x = Math.PI / 2;
+        patternGroup.add(torusMesh);
+
+        // Directional Dish Beam Cone
+        const beamGeo = new THREE.ConeGeometry(3.5, 12, 32, 1, true);
+        beamGeo.translate(0, 6, 0);
+        const beamMat = new THREE.MeshStandardMaterial({
+            color: 0xffb703,
+            transparent: true,
+            opacity: 0.5,
+            emissive: 0x664400,
+            side: THREE.DoubleSide
+        });
+        const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+        beamMesh.rotation.x = Math.PI / 2;
+        patternGroup.add(beamMesh);
+
+        // Yagi Lobe Cone
+        const yagiGeo = new THREE.ConeGeometry(2.8, 10, 32, 1, true);
+        yagiGeo.translate(0, 5, 0);
+        const yagiMat = new THREE.MeshStandardMaterial({
+            color: 0x00ffcc,
+            transparent: true,
+            opacity: 0.5,
+            emissive: 0x006644,
+            side: THREE.DoubleSide
+        });
+        const yagiMesh = new THREE.Mesh(yagiGeo, yagiMat);
+        yagiMesh.rotation.x = Math.PI / 2;
+        patternGroup.add(yagiMesh);
+
+        // ----------------------------------------------------
+        // 6. PROBE SENSOR MARKER
+        // ----------------------------------------------------
+        const probeGroup = new THREE.Group();
+        scene.add(probeGroup);
+        const probeSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.45, 24, 24),
+            new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0x880033 })
+        );
+        probeGroup.add(probeSphere);
+
+        const probeLineMat = new THREE.LineDashedMaterial({ color: 0xff0055, dashSize: 0.4, gapSize: 0.2 });
+        const probeLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 7.5, 0), new THREE.Vector3(0, 7.5, 6)]);
+        const probeLine = new THREE.Line(probeLineGeo, probeLineMat);
+        scene.add(probeLine);
+
+        // ----------------------------------------------------
+        // 7. INTERACTIVE UI CONTROLS BINDING
+        // ----------------------------------------------------
+        let state = {
+            freq: 1.5,
+            power: 1.0,
+            probeDist: 6.0,
+            antennaType: 0 // 0=Dipole, 1=Dish, 2=Yagi
+        };
+
+        const antennaNames = [
+            "Antenna Topology: Dipole (Omni Torus)",
+            "Antenna Topology: Parabolic Dish (Directional Beam)",
+            "Antenna Topology: Yagi-Uda Array (Directive Lobe)"
+        ];
+        const gainVals = [1.64, 28.2, 10.5];
+        const gainDbi = [2.15, 14.5, 10.2];
+
+        const freqSlider = document.getElementById('freq-slider');
+        const powerSlider = document.getElementById('power-slider');
+        const probeSlider = document.getElementById('probe-slider');
+        const toggleBtn = document.getElementById('toggle-antenna');
+
+        function updateTelemetry() {
+            document.getElementById('freq-val').innerText = state.freq.toFixed(1) + ' GHz';
+            document.getElementById('power-val').innerText = state.power.toFixed(1) + ' W';
+            document.getElementById('probe-val').innerText = state.probeDist.toFixed(1) + ' m';
+
+            const gain = gainVals[state.antennaType];
+            const eField = Math.sqrt(30 * state.power * gain) / Math.max(0.5, state.probeDist);
+            const powerDensity = ((eField * eField) / 377.0) * 1000;
+            const wavelength = (0.3 / state.freq) * 100;
+
+            document.getElementById('hud-e').innerHTML = eField.toFixed(2) + ' <span class="hud-unit">V/m</span>';
+            document.getElementById('hud-s').innerHTML = powerDensity.toFixed(2) + ' <span class="hud-unit">mW/m²</span>';
+            document.getElementById('hud-gain').innerHTML = gainDbi[state.antennaType] + ' <span class="hud-unit">dBi</span>';
+            document.getElementById('hud-wave').innerHTML = wavelength.toFixed(1) + ' <span class="hud-unit">cm</span>';
+        }
+
+        freqSlider.addEventListener('input', (e) => { state.freq = parseFloat(e.target.value); updateTelemetry(); });
+        powerSlider.addEventListener('input', (e) => { state.power = parseFloat(e.target.value); updateTelemetry(); });
+        probeSlider.addEventListener('input', (e) => { state.probeDist = parseFloat(e.target.value); updateTelemetry(); });
+
+        toggleBtn.addEventListener('click', () => {
+            state.antennaType = (state.antennaType + 1) % 3;
+            toggleBtn.innerText = antennaNames[state.antennaType];
+            updateTelemetry();
+        });
+
+        // ----------------------------------------------------
+        // 8. ANIMATION RENDER LOOP
+        // ----------------------------------------------------
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Pulse Beacon
+            beaconMat.color.setHSL(0.98, 1, 0.4 + 0.3 * Math.sin(elapsedTime * 6));
+            beaconLight.intensity = 2 + 1.5 * Math.sin(elapsedTime * 6);
+
+            // Antenna Head Visibility
+            dipoleHead.visible = state.antennaType === 0;
+            dishHead.visible = state.antennaType === 1;
+            yagiHead.visible = state.antennaType === 2;
+
+            torusMesh.visible = state.antennaType === 0;
+            beamMesh.visible = state.antennaType === 1;
+            yagiMesh.visible = state.antennaType === 2;
+
+            const powerScale = Math.sqrt(state.power);
+            if (state.antennaType === 0) torusMesh.scale.set(powerScale, powerScale, powerScale);
+            else if (state.antennaType === 1) beamMesh.scale.set(powerScale, powerScale, powerScale);
+            else if (state.antennaType === 2) yagiMesh.scale.set(powerScale, powerScale, powerScale);
+
+            // Concentric Wave Scaling & Opacity
+            const maxWaveRadius = 22 * powerScale;
+            const waveSpeed = 2.5 + state.freq * 1.5;
+
+            waveSpheres.forEach((sphere, idx) => {
+                const offset = (idx / NUM_WAVES) * maxWaveRadius;
+                const r = ((elapsedTime * waveSpeed + offset) % maxWaveRadius) + 0.2;
+                sphere.scale.set(r, r, r);
+
+                const opacity = Math.max(0, (1 - (r / maxWaveRadius)) * 0.6);
+                waveMats[idx].opacity = opacity;
+            });
+
+            // Update Probe Sensor Position & Line
+            probeGroup.position.set(0, 7.5, state.probeDist);
+            probeGroup.rotation.y = elapsedTime * 1.5;
+
+            const pos = probeLine.geometry.attributes.position;
+            pos.setXYZ(1, 0, 7.5, state.probeDist);
+            pos.needsUpdate = true;
+            probeLine.computeLineDistances();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

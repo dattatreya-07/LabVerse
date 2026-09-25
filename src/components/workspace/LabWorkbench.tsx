@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ExperimentDefinition, LabComponent, WireConnection, SimulationResult, LearningMode, ComponentType } from '@/types';
 import { InteractiveCanvas } from './InteractiveCanvas';
+import { Antenna3DCanvas } from './Antenna3DCanvas';
 import { EquipmentTray } from './EquipmentTray';
 import { ParameterControls } from './ParameterControls';
 import { PropertyInspector } from './PropertyInspector';
@@ -141,30 +142,41 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
       {/* Main Workspace Split Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left (2/3): Interactive Breadboard Canvas & Equipment Tray */}
+        {/* Left (2/3): Interactive Breadboard / 3D Canvas & Equipment Tray */}
         <div className="lg:col-span-2 space-y-4">
-          <InteractiveCanvas
-            components={components}
-            connections={connections}
-            onUpdateComponents={onUpdateComponents}
-            onUpdateConnections={onUpdateConnections}
-            onSelectComponent={setSelectedComponent}
-            selectedComponentId={selectedComponent?.id || null}
-            selectedWireId={selectedWire?.id || null}
-            onSelectWire={setSelectedWire}
-            onInspectComponent={setInspectingComponent}
-            isSimulating={lastResult?.visualState?.isOperating || false}
-            electronVelocity={lastResult?.visualState?.electronVelocity || 2}
-            theme={theme}
-          />
+          {experiment.id === 'antenna-radiation' ? (
+            <Antenna3DCanvas
+              parameters={parameters}
+              onParameterChange={onParameterChange}
+              activeFaults={activeFaults}
+              theme={theme}
+            />
+          ) : (
+            <InteractiveCanvas
+              components={components}
+              connections={connections}
+              onUpdateComponents={onUpdateComponents}
+              onUpdateConnections={onUpdateConnections}
+              onSelectComponent={setSelectedComponent}
+              selectedComponentId={selectedComponent?.id || null}
+              selectedWireId={selectedWire?.id || null}
+              onSelectWire={setSelectedWire}
+              onInspectComponent={setInspectingComponent}
+              isSimulating={lastResult?.visualState?.isOperating || false}
+              electronVelocity={lastResult?.visualState?.electronVelocity || 2}
+              theme={theme}
+            />
+          )}
 
-          <EquipmentTray
-            allowedEquipment={experiment.equipment}
-            onAddComponent={handleAddComponent}
-            onResetToPreset={onResetToPreset}
-            onClearCanvas={onClearCanvas}
-            theme={theme}
-          />
+          {experiment.id !== 'antenna-radiation' && (
+            <EquipmentTray
+              allowedEquipment={experiment.equipment}
+              onAddComponent={handleAddComponent}
+              onResetToPreset={onResetToPreset}
+              onClearCanvas={onClearCanvas}
+              theme={theme}
+            />
+          )}
         </div>
 
         {/* Right (1/3): Dynamic Parameter Controls & Quick Diagnostics */}

@@ -89,7 +89,9 @@ export const AnalysisChart: React.FC<AnalysisChartProps> = ({
                   color: isDark ? '#f8fafc' : '#0f172a',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 }}
+                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
                 formatter={(val: any, name: any) => [`${val} ${analysis.yAxisUnit}`, name === 'theoretical' ? 'Theoretical Curve' : 'Observed Data Point']}
+                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
                 labelFormatter={(lbl: any) => `${analysis.xAxisLabel}: ${lbl} ${analysis.xAxisUnit}`}
               />
               <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />

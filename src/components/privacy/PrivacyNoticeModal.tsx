@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShieldCheck, Trash2, Lock, Cpu, Database, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { ShieldCheck, Trash2, Lock, Cpu, Database, CheckCircle2, X } from 'lucide-react';
 
 interface PrivacyNoticeModalProps {
   isOpen: boolean;

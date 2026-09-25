@@ -109,7 +109,7 @@ export function clearExperimentSession(experimentId: string): ExperimentSession 
 /**
  * Formats observation records into downloadable CSV format
  */
-export function exportObservationsToCSV(observations: ObservationRecord[], experimentTitle: string): string {
+export function exportObservationsToCSV(observations: ObservationRecord[], _experimentTitle?: string): string {
   if (observations.length === 0) {
     return 'Run #,Timestamp,Circuit Topology,Faults Active,Notes\n';
   }

@@ -1,25 +1,23 @@
 import { getExperiment } from '../experiments/registry';
 import { createInitialSession, loadExperimentSession, saveExperimentSession, exportObservationsToCSV } from '../session/storage';
-import { solveDCCircuit } from '../simulation/circuits/dc-solver';
 import { simulateOhmsLaw } from '../simulation/circuits/ohms-law-sim';
-import { retrieveRelevantChunks, sanitizeInput } from '../ai/rag';
+import { retrieveRelevantChunks } from '../ai/rag';
 import { checkRateLimit } from '../security/rate-limiter';
 import { validateAndSanitizePrompt } from '../security/input-sanitizer';
 import { verifySimulationResult } from '../simulation/verifier';
-import { ExperimentSession, ObservationRecord } from '@/types';
+import { ObservationRecord } from '@/types';
 
 // Mock browser localStorage for node runner
 if (typeof window === 'undefined') {
   const store: Record<string, string> = {};
-  (global as any).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => { store[key] = value; },
-      removeItem: (key: string) => { delete store[key]; },
-      clear: () => { Object.keys(store).forEach(k => delete store[k]); }
-    }
+  const mockLocalStorage = {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); }
   };
-  (global as any).localStorage = (global as any).window.localStorage;
+  (globalThis as unknown as { window: unknown }).window = { localStorage: mockLocalStorage };
+  (globalThis as unknown as { localStorage: unknown }).localStorage = mockLocalStorage;
 }
 
 function runFullEndToEndVerification() {
@@ -31,7 +29,7 @@ function runFullEndToEndVerification() {
   if (exp.id !== 'ohms-law' || exp.domain !== 'ELECTRONICS') {
     throw new Error('Experiment catalog failed to return Ohms Law definition');
   }
-  let session = createInitialSession(exp, 'GUIDED');
+  const session = createInitialSession(exp, 'GUIDED');
   if (session.schemaVersion !== '1.0.0') {
     throw new Error('Initial session schema version must be 1.0.0');
   }

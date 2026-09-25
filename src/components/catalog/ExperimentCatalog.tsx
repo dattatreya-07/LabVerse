@@ -279,7 +279,7 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
         }`}>
           <AlertCircle className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
           <h3 className="text-base font-bold mb-1">No experiments found</h3>
-          <p className="text-xs mb-4">No matching experiment modules for query "{searchQuery}".</p>
+          <p className="text-xs mb-4">No matching experiment modules for query &quot;{searchQuery}&quot;.</p>
           <button
             onClick={() => { setSearchQuery(''); setSelectedDomain('ALL'); }}
             className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs cursor-pointer"

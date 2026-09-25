@@ -141,7 +141,7 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
 
           <div className="pt-1 flex items-center justify-between text-[11px]">
             <span className="text-emerald-400 font-semibold flex items-center space-x-1">
-              <span>Next Action: Wire apparatus and click "Run Simulation"</span>
+              <span>Next Action: Wire apparatus and click &quot;Run Simulation&quot;</span>
             </span>
             <span className="opacity-75">Step checklists available in Theory tab</span>
           </div>

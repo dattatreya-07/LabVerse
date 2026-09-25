@@ -1,19 +1,18 @@
 import { createInitialSession, loadExperimentSession, exportObservationsToCSV, CURRENT_SESSION_SCHEMA_VERSION } from './storage';
 import { getExperiment } from '../experiments/registry';
-import { ExperimentSession, ObservationRecord } from '@/types';
+import { ObservationRecord } from '@/types';
 
 // Mock localStorage in node environment if needed
 if (typeof window === 'undefined') {
   const store: Record<string, string> = {};
-  (global as any).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => { store[key] = value; },
-      removeItem: (key: string) => { delete store[key]; },
-      clear: () => { Object.keys(store).forEach(k => delete store[k]); }
-    }
+  const mockLocalStorage = {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); }
   };
-  (global as any).localStorage = (global as any).window.localStorage;
+  (globalThis as unknown as { window: unknown }).window = { localStorage: mockLocalStorage };
+  (globalThis as unknown as { localStorage: unknown }).localStorage = mockLocalStorage;
 }
 
 function runSessionTests() {

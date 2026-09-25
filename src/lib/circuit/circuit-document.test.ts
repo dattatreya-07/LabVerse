@@ -6,7 +6,7 @@ import {
   exportCircuitDocumentJSON,
   importCircuitDocumentJSON,
 } from './circuit-document-engine';
-import { LabComponent, WireConnection } from '@/types';
+import { WireConnection } from '@/types';
 
 function assert(condition: boolean, message: string) {
   if (!condition) {

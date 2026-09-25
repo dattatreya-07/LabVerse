@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Header, NavTab } from '@/components/nav/Header';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { ExperimentCatalog } from '@/components/catalog/ExperimentCatalog';
@@ -18,9 +18,29 @@ import { getExperiment } from '@/lib/experiments/registry';
 import { loadExperimentSession, saveExperimentSession, clearExperimentSession } from '@/lib/session/storage';
 
 export default function Home() {
-  const [selectedExpId, setSelectedExpId] = useState<string>('ohms-law');
-  const [session, setSession] = useState<ExperimentSession>(() => loadExperimentSession('ohms-law', 'GUIDED'));
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [selectedExpId, setSelectedExpId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const expParam = new URLSearchParams(window.location.search).get('exp');
+      if (expParam) return expParam;
+    }
+    return 'ohms-law';
+  });
+
+  const [session, setSession] = useState<ExperimentSession>(() => {
+    const expId = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('exp') || 'ohms-law') : 'ohms-law';
+    return loadExperimentSession(expId, 'GUIDED');
+  });
+
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    if (typeof window !== 'undefined') {
+      const tabParam = new URLSearchParams(window.location.search).get('tab') as NavTab | null;
+      if (tabParam && ['dashboard', 'catalog', 'prep', 'lab', 'analysis', 'tutor', 'report'].includes(tabParam)) {
+        return tabParam;
+      }
+    }
+    return 'dashboard';
+  });
+
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [privacyModalOpen, setPrivacyModalOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -44,25 +64,6 @@ export default function Home() {
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
-
-  // URL state synchronization on mount & back navigation
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab') as NavTab | null;
-      const expParam = params.get('exp');
-
-      if (expParam && expParam !== selectedExpId) {
-        setSelectedExpId(expParam);
-        const loaded = loadExperimentSession(expParam, 'GUIDED');
-        setSession(loaded);
-      }
-
-      if (tabParam && ['dashboard', 'catalog', 'prep', 'lab', 'analysis', 'tutor', 'report'].includes(tabParam)) {
-        setActiveTab(tabParam);
-      }
-    }
-  }, []);
 
   const syncUrlParams = (tab: NavTab, expId: string) => {
     if (typeof window !== 'undefined') {

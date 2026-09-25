@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChallengeGoal, SimulationResult } from '@/types';
-import { Trophy, CheckCircle2, Sparkles, HelpCircle, ArrowRight, Award } from 'lucide-react';
+import { Trophy, CheckCircle2, HelpCircle, Award } from 'lucide-react';
 
 interface ChallengeBannerProps {
   challenges?: ChallengeGoal[];

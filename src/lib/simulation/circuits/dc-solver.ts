@@ -182,7 +182,7 @@ export function solveDCCircuit(input: DCSolverInput): DCSolverResult {
 
   // 3. MNA Matrix Formulation: [A] [x] = [z]
   // Dimensions: N = mnaNodeCount (non-reference node voltages) + 1 (voltage source current)
-  const vSourceIndex = mnaNodeCount + 1; // 1-indexed for MNA matrix size
+  const _vSourceIndex = mnaNodeCount + 1; // 1-indexed for MNA matrix size
   const matrixDim = mnaNodeCount + 1;
 
   // Initialize Matrix A (matrixDim x matrixDim) and Vector Z (matrixDim)

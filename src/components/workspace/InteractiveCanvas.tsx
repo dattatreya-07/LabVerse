@@ -9,7 +9,6 @@ import { duplicateComponent } from '@/lib/circuit/circuit-document-engine';
 import { 
   ZoomIn, 
   ZoomOut, 
-  Maximize, 
   Undo2, 
   Redo2, 
   Copy, 
@@ -18,8 +17,7 @@ import {
   Hand, 
   MousePointer, 
   X,
-  RotateCw,
-  Sparkles
+  RotateCw
 } from 'lucide-react';
 
 interface InteractiveCanvasProps {
@@ -78,8 +76,8 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // History stack for Undo / Redo
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [history, setHistory] = useState<HistoryItem[]>(() => [{ components, connections }]);
+  const [historyIndex, setHistoryIndex] = useState<number>(0);
 
   // Push to history when state changes from user action
   const pushStateToHistory = (newComps: LabComponent[], newConns: WireConnection[]) => {
@@ -110,13 +108,21 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
     }
   };
 
-  // Sync initial state to history on mount or preset load
-  useEffect(() => {
-    if (history.length === 0) {
-      setHistory([{ components, connections }]);
-      setHistoryIndex(0);
-    }
-  }, []);
+  const handleDeleteComponent = (id: string) => {
+    const nextComps = components.filter(c => c.id !== id);
+    const nextWires = connections.filter(w => w.fromComponentId !== id && w.toComponentId !== id);
+    onUpdateComponents(nextComps);
+    onUpdateConnections(nextWires);
+    onSelectComponent(null);
+    pushStateToHistory(nextComps, nextWires);
+  };
+
+  const handleDeleteWire = (id: string) => {
+    const nextWires = connections.filter(w => w.id !== id);
+    onUpdateConnections(nextWires);
+    onSelectWire(null);
+    pushStateToHistory(components, nextWires);
+  };
 
   // Keyboard shortcut listener (Ctrl+Z, Ctrl+Y, Escape, Delete)
   useEffect(() => {
@@ -317,22 +323,6 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
       onSelectComponent(newComp);
       pushStateToHistory(updatedNodes, connections);
     }
-  };
-
-  const handleDeleteComponent = (id: string) => {
-    const nextComps = components.filter(c => c.id !== id);
-    const nextWires = connections.filter(w => w.fromComponentId !== id && w.toComponentId !== id);
-    onUpdateComponents(nextComps);
-    onUpdateConnections(nextWires);
-    onSelectComponent(null);
-    pushStateToHistory(nextComps, nextWires);
-  };
-
-  const handleDeleteWire = (id: string) => {
-    const nextWires = connections.filter(w => w.id !== id);
-    onUpdateConnections(nextWires);
-    onSelectWire(null);
-    pushStateToHistory(components, nextWires);
   };
 
   const handleToggleSwitch = (comp: LabComponent) => {

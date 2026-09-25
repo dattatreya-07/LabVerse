@@ -104,7 +104,7 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
         </button>
       </div>
 
-      {/* Guided Mode Instructions / Challenge Banner */}
+      {/* CHALLENGE MODE */}
       {mode === 'CHALLENGE' && (
         <ChallengeBanner
           challenges={experiment.challenges}
@@ -115,20 +115,51 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
         />
       )}
 
-      {mode === 'GUIDED' && experiment.workspace.guidedSteps && (
-        <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs ${
+      {/* GUIDED MODE */}
+      {mode === 'GUIDED' && experiment.workspace.guidedSteps && experiment.workspace.guidedSteps.length > 0 && (
+        <div className={`p-4 rounded-2xl border space-y-3 text-xs transition-colors ${
           isDark ? 'bg-slate-900 border-cyan-900/50 text-slate-200' : 'bg-cyan-50 border-cyan-200 text-cyan-950'
         }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Compass className="w-5 h-5 text-cyan-400 shrink-0" />
+              <div>
+                <span className="font-bold uppercase tracking-wider text-[10px] text-cyan-400 block">
+                  Guided Learning Mode Protocol
+                </span>
+                <h4 className="font-bold text-sm">{experiment.workspace.guidedSteps[0].title}</h4>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              Step 1 of {experiment.workspace.guidedSteps.length}
+            </span>
+          </div>
+
+          <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            {experiment.workspace.guidedSteps[0].instruction}
+          </p>
+
+          <div className="pt-1 flex items-center justify-between text-[11px]">
+            <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+              <span>Next Action: Wire apparatus and click "Run Simulation"</span>
+            </span>
+            <span className="opacity-75">Step checklists available in Theory tab</span>
+          </div>
+        </div>
+      )}
+
+      {/* PRACTICE MODE */}
+      {mode === 'PRACTICE' && (
+        <div className={`p-3.5 rounded-2xl border flex items-center justify-between text-xs ${
+          isDark ? 'bg-slate-900/80 border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-700 shadow-sm'
+        }`}>
           <div className="flex items-center space-x-2.5">
-            <Compass className="w-5 h-5 text-cyan-500 shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
             <div>
-              <span className="font-bold uppercase tracking-wider block text-[10px] text-cyan-600 dark:text-cyan-400">
-                Guided Step 01 / 0{experiment.workspace.guidedSteps.length}
-              </span>
-              <p className="font-semibold">{experiment.workspace.guidedSteps[0].instruction}</p>
+              <span className="font-bold text-cyan-400 block text-[10px] uppercase tracking-wider">Practice Sandbox</span>
+              <span>Free-form experimentation. Adjust parameters, inject faults, and test hypotheses.</span>
             </div>
           </div>
-          <span className="text-[11px] font-mono opacity-70 hidden sm:inline">Follow checklist in Theory & Prep tab</span>
         </div>
       )}
 

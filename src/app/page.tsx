@@ -13,6 +13,9 @@ import { ReportView } from '@/components/report/ReportView';
 import { ToastContainer, ToastMessage } from '@/components/ui/Toast';
 import { PrivacyNoticeModal } from '@/components/privacy/PrivacyNoticeModal';
 
+import { LandingPage } from '@/components/landing/LandingPage';
+import { createClient } from '@/lib/supabase/client';
+
 import { ExperimentSession, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
 import { getExperiment } from '@/lib/experiments/registry';
 import { loadExperimentSession, saveExperimentSession, clearExperimentSession } from '@/lib/session/storage';
@@ -31,15 +34,30 @@ export default function Home() {
     return loadExperimentSession(expId, 'GUIDED');
   });
 
-  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+  const [activeTab, setActiveTab] = useState<NavTab | 'landing'>(() => {
     if (typeof window !== 'undefined') {
       const tabParam = new URLSearchParams(window.location.search).get('tab') as NavTab | null;
       if (tabParam && ['dashboard', 'catalog', 'prep', 'lab', 'analysis', 'tutor', 'report'].includes(tabParam)) {
         return tabParam;
       }
     }
-    return 'dashboard';
+    return 'landing';
   });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userDisplayName, setUserDisplayName] = useState<string>('');
+
+  React.useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setIsAuthenticated(true);
+        setUserDisplayName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Researcher');
+      }
+    }
+    checkAuth();
+  }, []);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [privacyModalOpen, setPrivacyModalOpen] = useState<boolean>(false);
@@ -326,6 +344,10 @@ export default function Home() {
     });
     addToast('info', 'Log Cleared', 'All observation records removed.');
   };
+
+  if (activeTab === 'landing') {
+    return <LandingPage isAuthenticated={isAuthenticated} userDisplayName={userDisplayName} />;
+  }
 
   return (
     <div className={`min-h-screen font-sans selection:bg-cyan-500 selection:text-slate-950 flex flex-col transition-colors ${

@@ -24,6 +24,7 @@ export interface FaultLogEntry {
 }
 
 export interface ExperimentSession {
+  schemaVersion?: string; // e.g. '1.0.0'
   sessionId: string;
   studentName: string;
   experimentId: string;

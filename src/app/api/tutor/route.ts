@@ -1,35 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TutorRequest, TutorResponse, SourceReference } from '@/types';
-import { retrieveRelevantChunks, sanitizeInput } from '@/lib/ai/rag';
+import { retrieveRelevantChunks } from '@/lib/ai/rag';
 import { getExperiment } from '@/lib/experiments/registry';
+import { checkRateLimit, getClientIP } from '@/lib/security/rate-limiter';
+import { validateAndSanitizePrompt, scrubPII } from '@/lib/security/input-sanitizer';
+import { applySecurityHeaders } from '@/lib/security/security-headers';
 
 export async function POST(req: NextRequest) {
+  // 1. Rate limiting check (20 requests per minute per IP)
+  const clientIP = getClientIP(req.headers);
+  const rateLimit = checkRateLimit(`tutor_${clientIP}`, 20, 60000);
+
+  if (!rateLimit.isAllowed) {
+    const errorResp = NextResponse.json(
+      { error: `Too many AI tutor requests. Please wait ${rateLimit.resetSeconds} seconds before retrying.` },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.resetSeconds) } }
+    );
+    return applySecurityHeaders(errorResp);
+  }
+
   try {
+    // 2. Request body payload size check (max 100 KB)
+    const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+    if (contentLength > 102400) {
+      const resp = NextResponse.json(
+        { error: 'Payload size exceeds maximum allowable limit of 100 KB.' },
+        { status: 413 }
+      );
+      return applySecurityHeaders(resp);
+    }
+
     const body: TutorRequest = await req.json();
     const { question, experimentId, components, connections, parameters, latestResult, activeFaults } = body;
 
+    // 3. Server-side validation of input question
     if (!question || typeof question !== 'string' || question.trim().length === 0) {
-      return NextResponse.json(
+      const resp = NextResponse.json(
         { error: 'A valid non-empty question string is required.' },
         { status: 400 }
       );
+      return applySecurityHeaders(resp);
     }
 
     if (question.length > 1000) {
-      return NextResponse.json(
+      const resp = NextResponse.json(
         { error: 'Question exceeds maximum limit of 1000 characters.' },
         { status: 400 }
       );
+      return applySecurityHeaders(resp);
     }
 
-    const sanitizedQuestion = sanitizeInput(question);
+    // 4. Prompt injection detection and PII scrubbing
+    const promptCheck = validateAndSanitizePrompt(question);
+    if (promptCheck.isFlagged) {
+      console.warn(`[Security Alert] Flagged prompt injection from IP ${clientIP}: ${promptCheck.flagReason}`);
+    }
+
+    const sanitizedQuestion = promptCheck.sanitized;
     const expDef = getExperiment(experimentId || 'ohms-law');
     
     // Retrieve grounded knowledge chunks
     const retrievalResult = retrieveRelevantChunks(sanitizedQuestion, expDef.id, 3);
     const sources: SourceReference[] = retrievalResult.sources;
 
-    // Summarize live workspace state for LLM context
+    // Summarize live workspace state for LLM context (strictly scrubbed of any PII)
     const compSummary = components && components.length > 0 
       ? components.map(c => `${c.title} (${c.type})`).join(', ') 
       : 'Default Apparatus Setup';
@@ -39,7 +73,7 @@ export async function POST(req: NextRequest) {
       ? latestResult.measurements.map(m => `${m.label}: Theo=${m.theoreticalValue} ${m.unit}, Obs=${m.observedValue} ${m.unit}`).join('; ')
       : 'No measurements recorded yet';
 
-    const stateContext = `[Experiment: ${expDef.title}]
+    const stateContext = scrubPII(`[Experiment: ${expDef.title}]
 [Domain: ${expDef.domain}]
 [Apparatus Components: ${compSummary}]
 [Connections count: ${connCount}]
@@ -47,7 +81,7 @@ export async function POST(req: NextRequest) {
 [Active Faults: ${activeFaults?.join(', ') || 'None'}]
 [Latest Simulation Measurements: ${measSummary}]
 [Circuit Topology: ${latestResult?.topology?.circuitTopology || 'N/A'}]
-[Topology Status: ${latestResult?.topology?.message || 'N/A'}]`;
+[Topology Status: ${latestResult?.topology?.message || 'N/A'}]`);
 
     const groqApiKey = process.env.GROQ_API_KEY;
     const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
@@ -103,7 +137,8 @@ ${!retrievalResult.hasRelevantEvidence ? '[Note: Low retrieval match. Explain us
               grounded: retrievalResult.hasRelevantEvidence,
               timestamp: new Date().toLocaleTimeString(),
             };
-            return NextResponse.json(tutorResp);
+            const jsonResp = NextResponse.json(tutorResp);
+            return applySecurityHeaders(jsonResp);
           }
         }
       } catch (groqErr) {
@@ -122,14 +157,16 @@ ${!retrievalResult.hasRelevantEvidence ? '[Note: Low retrieval match. Explain us
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    return NextResponse.json(tutorResp);
+    const jsonResp = NextResponse.json(tutorResp);
+    return applySecurityHeaders(jsonResp);
 
   } catch (error) {
     console.error('Tutor API Route Error:', error);
-    return NextResponse.json(
+    const errResp = NextResponse.json(
       { error: 'Internal server error processing tutor request.' },
       { status: 500 }
     );
+    return applySecurityHeaders(errResp);
   }
 }
 

@@ -16,7 +16,8 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  UserCheck
+  UserCheck,
+  ShieldCheck
 } from 'lucide-react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 
@@ -30,6 +31,7 @@ interface HeaderProps {
   onResetSession: () => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  onOpenPrivacy?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   onResetSession,
   theme,
   onToggleTheme,
+  onOpenPrivacy,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDark = theme === 'dark';
@@ -133,6 +136,21 @@ export const Header: React.FC<HeaderProps> = ({
             <UserCheck className="w-3.5 h-3.5" />
             <span className="font-semibold">{session.mode}</span>
           </div>
+
+          {/* Privacy & Security Disclosures Button */}
+          {onOpenPrivacy && (
+            <button
+              onClick={onOpenPrivacy}
+              className={`p-2 rounded-lg border transition-all flex items-center justify-center ${
+                isDark
+                  ? 'bg-slate-900 hover:bg-slate-800 text-cyan-400 border-slate-800'
+                  : 'bg-slate-100 hover:bg-slate-200 text-cyan-600 border-slate-300'
+              }`}
+              title="Privacy & Student Data Security Disclosures"
+            >
+              <ShieldCheck className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Theme Toggle Button */}
           <button

@@ -11,6 +11,7 @@ import { AnalysisChart } from '@/components/analysis/AnalysisChart';
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { ReportView } from '@/components/report/ReportView';
 import { ToastContainer, ToastMessage } from '@/components/ui/Toast';
+import { PrivacyNoticeModal } from '@/components/privacy/PrivacyNoticeModal';
 
 import { ExperimentSession, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
 import { getExperiment } from '@/lib/experiments/registry';
@@ -21,6 +22,7 @@ export default function Home() {
   const [session, setSession] = useState<ExperimentSession>(() => loadExperimentSession('ohms-law', 'GUIDED'));
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('labverse_theme') as 'dark' | 'light' | null;
@@ -341,6 +343,7 @@ export default function Home() {
         onResetSession={handleResetSession}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        onOpenPrivacy={() => setPrivacyModalOpen(true)}
       />
 
       {/* Main View Area */}
@@ -451,9 +454,29 @@ export default function Home() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>LabVerse Science Platform • Phase 2 Production Architecture</span>
+          <button
+            onClick={() => setPrivacyModalOpen(true)}
+            className="hover:underline text-cyan-400 font-medium cursor-pointer"
+          >
+            Privacy & Student Data Security
+          </button>
           <span className="font-mono text-[11px] opacity-70">Next.js 16 • React 19 • TypeScript • Tailwind v4 • Recharts • jsPDF</span>
         </div>
       </footer>
+
+      {/* Privacy & Student Data Disclosures Modal */}
+      <PrivacyNoticeModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        onClearLocalData={() => {
+          if (typeof window !== 'undefined') {
+            localStorage.clear();
+          }
+          const fresh = clearExperimentSession(currentExperiment.id);
+          setSession(fresh);
+          addToast('success', 'Local Data Purged', 'All local sessions and stored lab data removed.');
+        }}
+      />
 
     </div>
   );

@@ -23,6 +23,7 @@ LabVerse is a production-grade, modular virtual science laboratory designed for 
 | Toast Notifications | **IMPLEMENTED** | `src/components/ui/Toast.tsx` | Non-intrusive scientific toast alerts for simulation runs, observations, and state resets. |
 | Session Storage & Migration | **IMPLEMENTED** | `src/lib/session/storage.ts`, `src/lib/session/session.test.ts` | Canonical `ExperimentSession` schema v1.0.0 persistence, graceful migration/recovery for malformed data, and CSV export. |
 | PDF & Analytical Reporting | **IMPLEMENTED** | `src/lib/report/pdf-generator.ts` | Canonical session snapshot PDF report generator using jsPDF with branding, objective, observation tables, fault logs, conclusion templates, and simulation disclaimers. |
+| Security & Hardening | **IMPLEMENTED** | `src/lib/security/*`, `docs/SECURITY.md`, `supabase/migrations/20260925000000_init_schema.sql` | Sliding window rate limiting, prompt injection defense, PII scrubbing, server-side simulation verifier, Supabase RLS policies, and student privacy disclosures. |
 | Theme System | **IMPLEMENTED** | `src/app/globals.css`, `src/app/page.tsx` | Tailored Slate Navy Charcoal (`dark`) and Clean Scientific Light (`light`) themes with seamless toggle. |
 
 ---
@@ -39,6 +40,7 @@ LabVerse is a production-grade, modular virtual science laboratory designed for 
 | MNA Solver Unit Tests | `src/lib/simulation/circuits/dc-solver.test.ts` | **IMPLEMENTED** | Unit tests for single resistor, series network, parallel network, open switch, and calibration fault. Pass rate: **100% (5/5 pass)**. |
 | RAG Knowledge Engine Tests | `src/lib/ai/rag.test.ts` | **IMPLEMENTED** | Unit tests for relevant chunk retrieval, query thresholding, prompt injection filtering, and citation provenance. Pass rate: **100% (5/5 pass)**. |
 | Circuit Document Engine | `src/lib/circuit/circuit-document-engine.ts`, `src/lib/circuit/circuit-document.test.ts` | **IMPLEMENTED** | Pure domain module for CircuitDocument schema v1.0.0, node duplication, graph validation, JSON import/export, and unit tests. Pass rate: **100% (6/6 pass)**. |
+| Security Unit Tests | `src/lib/security/security.test.ts` | **IMPLEMENTED** | Unit tests for rate limiting, prompt injection defense, PII scrubbing, server simulation verification, and bounded pagination. Pass rate: **100% (6/6 pass)**. |
 
 ---
 
@@ -61,6 +63,7 @@ LabVerse is a production-grade, modular virtual science laboratory designed for 
 - **RAG Knowledge Test Suite:** `npx tsx src/lib/ai/rag.test.ts` -> **5/5 passed**
 - **Circuit Document Test Suite:** `npx tsx src/lib/circuit/circuit-document.test.ts` -> **6/6 passed**
 - **Session & Schema Test Suite:** `npx tsx src/lib/session/session.test.ts` -> **4/4 passed**
+- **Security & Hardening Test Suite:** `npx tsx src/lib/security/security.test.ts` -> **6/6 passed**
 - **Production Next.js Build:** `npm run build` -> **0 errors, static & dynamic routes compiled cleanly**
 
 ---

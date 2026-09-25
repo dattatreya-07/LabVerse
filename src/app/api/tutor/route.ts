@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TutorRequest, TutorResponse, SourceReference } from '@/types';
-import { retrieveRelevantChunks } from '@/lib/ai/rag';
+import { retrieveRelevantChunks, sanitizeInput } from '@/lib/ai/rag';
 import { getExperiment } from '@/lib/experiments/registry';
 
 export async function POST(req: NextRequest) {
@@ -10,56 +10,67 @@ export async function POST(req: NextRequest) {
 
     if (!question || typeof question !== 'string' || question.trim().length === 0) {
       return NextResponse.json(
-        { error: 'A valid question string is required.' },
+        { error: 'A valid non-empty question string is required.' },
         { status: 400 }
       );
     }
 
-    const trimmedQuestion = question.trim();
-    const expDef = getExperiment(experimentId || 'ohms-law');
-    const chunks = retrieveRelevantChunks(trimmedQuestion, expDef.id, 3);
-    
-    const sources: SourceReference[] = chunks.map(c => ({
-      id: c.id,
-      title: c.title,
-      section: c.category,
-      sourceType: 'Reviewed Lab Manual',
-      excerpt: c.content.slice(0, 160) + '...',
-    }));
+    if (question.length > 1000) {
+      return NextResponse.json(
+        { error: 'Question exceeds maximum limit of 1000 characters.' },
+        { status: 400 }
+      );
+    }
 
-    // Build context string from active laboratory workspace state
-    const compSummary = components ? components.map(c => `${c.title} (pos: ${c.position.x},${c.position.y})`).join(', ') : 'Default Setup';
+    const sanitizedQuestion = sanitizeInput(question);
+    const expDef = getExperiment(experimentId || 'ohms-law');
+    
+    // Retrieve grounded knowledge chunks
+    const retrievalResult = retrieveRelevantChunks(sanitizedQuestion, expDef.id, 3);
+    const sources: SourceReference[] = retrievalResult.sources;
+
+    // Summarize live workspace state for LLM context
+    const compSummary = components && components.length > 0 
+      ? components.map(c => `${c.title} (${c.type})`).join(', ') 
+      : 'Default Apparatus Setup';
+    
     const connCount = connections ? connections.length : 0;
     const measSummary = latestResult?.measurements
       ? latestResult.measurements.map(m => `${m.label}: Theo=${m.theoreticalValue} ${m.unit}, Obs=${m.observedValue} ${m.unit}`).join('; ')
-      : 'No measurements yet';
+      : 'No measurements recorded yet';
 
     const stateContext = `[Experiment: ${expDef.title}]
 [Domain: ${expDef.domain}]
-[Workspace Components: ${compSummary}]
+[Apparatus Components: ${compSummary}]
 [Connections count: ${connCount}]
 [Parameters: ${JSON.stringify(parameters || {})}]
 [Active Faults: ${activeFaults?.join(', ') || 'None'}]
 [Latest Simulation Measurements: ${measSummary}]
 [Circuit Topology: ${latestResult?.topology?.circuitTopology || 'N/A'}]
-[Topology Message: ${latestResult?.topology?.message || 'N/A'}]`;
+[Topology Status: ${latestResult?.topology?.message || 'N/A'}]`;
 
     const groqApiKey = process.env.GROQ_API_KEY;
+    const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
     if (groqApiKey) {
       try {
-        const ragContextText = chunks.map((c, idx) => `[Source ${idx + 1}: ${c.title}]\n${c.content}`).join('\n\n');
+        const ragContextText = retrievalResult.chunks.map((c, idx) => `[Source ${idx + 1}: ${c.title}]\n${c.content}`).join('\n\n');
         
-        const systemPrompt = `You are LabVerse AI Diagnostic Tutor, an expert laboratory assistant for ${expDef.title}.
-Analyze the student's question against the live virtual laboratory state and verified knowledge base below.
-Encourage scientific reasoning, explain discrepancies between theoretical and observed measurements, diagnose faults, and offer actionable laboratory hints.
-Never invent or fabricate measurements; always refer to the actual simulated values.
+        const systemPrompt = `You are LabVerse AI Science & Diagnostic Tutor, an expert academic assistant for ${expDef.title}.
+Analyze the student's query against the live virtual laboratory state and verified knowledge base below.
+Explain scientific principles, diagnose hardware/fault anomalies, and guide the student step-by-step.
+Always refer to actual simulated readings from the live state. Never fabricate measurements or fake parameters.
 
 Live Laboratory State:
 ${stateContext}
 
-Retrieved Grounded Knowledge:
-${ragContextText}`;
+Retrieved Grounded Knowledge Corpus:
+${ragContextText}
+
+${!retrievalResult.hasRelevantEvidence ? '[Note: Low retrieval match. Explain using general physics/electronics principles.]' : ''}`;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -67,16 +78,19 @@ ${ragContextText}`;
             'Authorization': `Bearer ${groqApiKey}`,
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: groqModel,
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: trimmedQuestion }
+              { role: 'user', content: sanitizedQuestion }
             ],
             temperature: 0.3,
-            max_tokens: 600,
+            max_tokens: 650,
           }),
         });
+
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -86,25 +100,25 @@ ${ragContextText}`;
               answer: aiAnswer,
               sources,
               isCuratedFallback: false,
-              grounded: true,
+              grounded: retrievalResult.hasRelevantEvidence,
               timestamp: new Date().toLocaleTimeString(),
             };
             return NextResponse.json(tutorResp);
           }
         }
       } catch (groqErr) {
-        console.warn('Groq API call failed or timed out, falling back to curated RAG base:', groqErr);
+        console.warn('Groq API call failed or timed out; utilizing fallback engine:', groqErr);
       }
     }
 
     // Fallback: Generate curated response from RAG index & current lab state
-    const fallbackAnswer = generateCuratedResponse(trimmedQuestion, expDef, latestResult, activeFaults);
+    const fallbackAnswer = generateCuratedResponse(sanitizedQuestion, expDef, latestResult, activeFaults);
 
     const tutorResp: TutorResponse = {
       answer: fallbackAnswer,
       sources,
       isCuratedFallback: true,
-      grounded: true,
+      grounded: retrievalResult.hasRelevantEvidence,
       timestamp: new Date().toLocaleTimeString(),
     };
 
@@ -132,7 +146,7 @@ function generateCuratedResponse(
     return `### 🔍 Open Circuit Discontinuity Diagnosis
 Currently, the circuit has an **Open Circuit Discontinuity**.
 
-- **Theoretical Current:** ${latestResult?.measurements.find(m => m.id === 'current_meas')?.theoreticalValue ?? '0.30'} A
+- **Theoretical Current ($V/R$):** ${latestResult?.measurements.find(m => m.id === 'current_meas')?.theoreticalValue ?? '0.30'} A
 - **Observed Ammeter Reading:** **0.00 A**
 
 **Why is current zero?**

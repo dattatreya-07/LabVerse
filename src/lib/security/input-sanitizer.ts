@@ -4,12 +4,12 @@
 
 // Patterns indicating potential prompt injection attempts
 const PROMPT_INJECTION_PATTERNS = [
-  /ignore (all )?previous (instructions|prompts|rules)/i,
+  /ignore (all )?(previous )?(instructions|prompts|rules)/i,
   /system prompt/i,
   /you are now a/i,
   /override safety rules/i,
   /disregard (the )?above/i,
-  /reveal (the )?secret/i,
+  /reveal (the )?(secret|key)/i,
   /act as an unrestricted/i,
   /jailbreak/i,
 ];

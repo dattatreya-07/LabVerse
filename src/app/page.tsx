@@ -362,7 +362,7 @@ export default function Home() {
         connections: resetConns,
         lastResult: simulationResult,
       });
-      addToast('info', 'Reset to Default Preset', 'Apparatus layout restored.');
+      addToast('info', `Reset to ${currentExperiment.title} Preset`, 'Apparatus layout restored.');
     }
   };
 

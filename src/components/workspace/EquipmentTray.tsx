@@ -17,6 +17,7 @@ import {
 
 interface EquipmentTrayProps {
   allowedEquipment: EquipmentDefinition[];
+  experimentTitle?: string;
   onAddComponent: (type: ComponentType) => void;
   onResetToPreset: () => void;
   onClearCanvas: () => void;
@@ -25,6 +26,7 @@ interface EquipmentTrayProps {
 
 export const EquipmentTray: React.FC<EquipmentTrayProps> = ({
   allowedEquipment,
+  experimentTitle,
   onAddComponent,
   onResetToPreset,
   onClearCanvas,
@@ -52,9 +54,6 @@ export const EquipmentTray: React.FC<EquipmentTrayProps> = ({
         return <Plus className="w-5 h-5 text-cyan-400" />;
     }
   };
-
-  // Supported components in current Ohm's law solver
-  const supportedTypes: ComponentType[] = ['BATTERY', 'DC_SUPPLY', 'RESISTOR', 'VARIABLE_RESISTOR', 'AMMETER', 'SWITCH'];
 
   return (
     <div className={`rounded-2xl border p-4 space-y-3 transition-colors ${
@@ -84,10 +83,10 @@ export const EquipmentTray: React.FC<EquipmentTrayProps> = ({
                 ? 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
                 : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-200'
             }`}
-            title="Load Preloaded Ohm's Law Series Circuit Setup"
+            title={`Load Preloaded ${experimentTitle || 'Apparatus'} Preset Setup`}
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Load Ohm&apos;s Law Preset</span>
+            <span>Load {experimentTitle || 'Apparatus'} Preset</span>
           </button>
 
           <button
@@ -108,7 +107,7 @@ export const EquipmentTray: React.FC<EquipmentTrayProps> = ({
       {/* Equipment Palette Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {allowedEquipment.map((eq) => {
-          const isSolverSupported = supportedTypes.includes(eq.type);
+          const isSolverSupported = true;
 
           return (
             <button

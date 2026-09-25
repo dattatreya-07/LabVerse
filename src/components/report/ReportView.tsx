@@ -4,6 +4,7 @@ import React from 'react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 import { generateGenericPDFReport } from '@/lib/report/pdf-generator';
 import { FileText, Download, ShieldCheck, AlertTriangle, Cpu, Award, CheckCircle2 } from 'lucide-react';
+import { MathFormula } from '@/components/ui/MathFormula';
 
 interface ReportViewProps {
   session: ExperimentSession;
@@ -135,10 +136,10 @@ export const ReportView: React.FC<ReportViewProps> = ({ session, experiment, the
           <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             {experiment.learningObjectives.map(o => typeof o === 'string' ? o : o.description).join(' ')}
           </p>
-          <div className={`p-4 rounded-xl border text-center font-mono text-cyan-600 dark:text-cyan-300 text-sm font-bold ${
+          <div className={`p-4 rounded-xl border text-center text-cyan-600 dark:text-cyan-300 text-base font-bold ${
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-cyan-200'
           }`}>
-            {experiment.report.governingFormulaLatex}
+            <MathFormula formula={experiment.report.governingFormulaLatex} />
           </div>
         </div>
 

@@ -320,6 +320,7 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
           {experiment.id !== 'antenna-radiation' && (
             <EquipmentTray
               allowedEquipment={experiment.equipment}
+              experimentTitle={experiment.title}
               onAddComponent={handleAddComponent}
               onResetToPreset={onResetToPreset}
               onClearCanvas={onClearCanvas}

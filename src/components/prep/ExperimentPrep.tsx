@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { ExperimentDefinition } from '@/types';
-import { BookOpen, CheckSquare, Square, Zap, ShieldAlert, ArrowRight, Play, Trophy } from 'lucide-react';
+import { BookOpen, CheckSquare, Square, Zap, ShieldAlert, ArrowRight, Play, Trophy, Box } from 'lucide-react';
+import { Apparatus3DPreview } from '@/components/3d/Apparatus3DPreview';
+import { MathFormula } from '@/components/ui/MathFormula';
 
 interface ExperimentPrepProps {
   experiment: ExperimentDefinition;
@@ -31,7 +33,7 @@ export const ExperimentPrep: React.FC<ExperimentPrepProps> = ({
       }`}>
         <div className="flex items-center space-x-2 text-cyan-600 dark:text-cyan-400 text-xs font-semibold uppercase tracking-wider">
           <BookOpen className="w-4 h-4" />
-          <span>{experiment.domain} • Conceptual Preparation & Procedure Protocol</span>
+          <span>{experiment.domain} • Conceptual Preparation & Preset Apparatus Protocol</span>
         </div>
         <h1 className={`text-2xl sm:text-3xl font-extrabold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
           {experiment.title}
@@ -39,6 +41,21 @@ export const ExperimentPrep: React.FC<ExperimentPrepProps> = ({
         <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
           {experiment.theory.corePrinciple}
         </p>
+      </div>
+
+      {/* 3D Interactive Preset & Apparatus Explainer */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className={`text-base font-bold flex items-center space-x-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            <Box className="w-4 h-4 text-cyan-500" />
+            <span>Interactive 3D Apparatus & Preset Layout</span>
+          </h2>
+          <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
+            Three.js Real-Time 3D Simulation
+          </span>
+        </div>
+
+        <Apparatus3DPreview experiment={experiment} theme={theme} />
       </div>
 
       {/* Learning Objectives */}
@@ -76,19 +93,26 @@ export const ExperimentPrep: React.FC<ExperimentPrepProps> = ({
           <span>Governing Equations & Mathematical Models</span>
         </h2>
 
-        <div className={`p-6 rounded-2xl border text-center space-y-3 transition-colors ${
+        <div className={`p-6 sm:p-8 rounded-2xl border text-center space-y-4 transition-colors ${
           isDark
             ? 'bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border-cyan-500/30'
             : 'bg-gradient-to-r from-sky-50 via-indigo-50/50 to-sky-50 border-cyan-300 shadow-sm'
         }`}>
-          <div className="flex flex-wrap items-center justify-center gap-6 text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-sky-500 to-indigo-600 dark:from-cyan-400 dark:via-sky-200 dark:to-indigo-300 tracking-widest font-mono">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xl sm:text-2xl font-bold text-cyan-600 dark:text-cyan-300">
             {experiment.theory.equations.map((eq, i) => (
-              <span key={i} className="px-3 py-1 rounded-xl bg-slate-950/30 border border-cyan-500/20">
-                {eq}
-              </span>
+              <div
+                key={i}
+                className={`px-4 py-2.5 rounded-xl border shadow-sm transition-all ${
+                  isDark
+                    ? 'bg-slate-950/70 border-cyan-500/30 text-cyan-200 hover:border-cyan-400'
+                    : 'bg-white border-cyan-200 text-cyan-900 hover:border-cyan-400'
+                }`}
+              >
+                <MathFormula formula={eq} />
+              </div>
             ))}
           </div>
-          <p className={`text-xs max-w-2xl mx-auto ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+          <p className={`text-xs max-w-2xl mx-auto leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             {experiment.theory.derivation}
           </p>
         </div>
@@ -99,12 +123,14 @@ export const ExperimentPrep: React.FC<ExperimentPrepProps> = ({
             {Object.entries(experiment.theory.variableDescriptions).map(([symbol, desc]) => (
               <div
                 key={symbol}
-                className={`p-3.5 rounded-xl border space-y-1 ${
+                className={`p-3.5 rounded-xl border space-y-1.5 ${
                   isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
                 }`}
               >
-                <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 font-bold">{symbol}</span>
-                <p className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{desc}</p>
+                <div className="text-xs font-bold text-cyan-600 dark:text-cyan-400 font-mono">
+                  <MathFormula inline formula={symbol} />
+                </div>
+                <p className={`text-[11px] leading-snug ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{desc}</p>
               </div>
             ))}
           </div>

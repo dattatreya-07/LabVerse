@@ -50,12 +50,9 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
   const domains: Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'ALL', label: 'All Domains', icon: Compass },
-    { id: 'PHYSICS', label: 'Physics (All)', icon: Activity },
-    { id: 'ECE', label: 'ECE & Antennas', icon: Radio },
+    { id: 'PHYSICS', label: 'Physics', icon: Activity },
+    { id: 'ECE', label: 'ECE & Antenna', icon: Radio },
     { id: 'ELECTRONICS', label: 'Electronics', icon: Zap },
-    { id: 'MECHANICS', label: 'Mechanics', icon: Activity },
-    { id: 'QUANTUM', label: 'Quantum', icon: Sun },
-    { id: 'NUCLEAR', label: 'Nuclear', icon: Atom },
     { id: 'CHEMISTRY', label: 'Chemistry', icon: FlaskConical },
     { id: 'BIOLOGY', label: 'Biology', icon: Dna },
     { id: 'FINANCE', label: 'Finance', icon: TrendingUp },
@@ -76,15 +73,15 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
 
   const getDomainIcon = (domain: DomainCategory) => {
     switch (domain) {
-      case 'ECE': return <Radio className="w-5 h-5 text-indigo-400" />;
-      case 'ELECTRONICS': return <Zap className="w-5 h-5 text-cyan-400" />;
-      case 'MECHANICS': return <Activity className="w-5 h-5 text-amber-400" />;
-      case 'QUANTUM': return <Sun className="w-5 h-5 text-purple-400" />;
-      case 'NUCLEAR': return <Atom className="w-5 h-5 text-rose-400" />;
-      case 'BIOLOGY': return <Dna className="w-5 h-5 text-emerald-400" />;
-      case 'CHEMISTRY': return <FlaskConical className="w-5 h-5 text-emerald-400" />;
-      case 'FINANCE': return <TrendingUp className="w-5 h-5 text-amber-400" />;
-      default: return <Zap className="w-5 h-5 text-cyan-400" />;
+      case 'ECE': return <Radio className="w-5 h-5 text-[#FF7448]" />;
+      case 'ELECTRONICS': return <Zap className="w-5 h-5 text-[#FF7448]" />;
+      case 'MECHANICS': return <Activity className="w-5 h-5 text-[#FF7448]" />;
+      case 'QUANTUM': return <Sun className="w-5 h-5 text-[#FF7448]" />;
+      case 'NUCLEAR': return <Atom className="w-5 h-5 text-[#FF7448]" />;
+      case 'BIOLOGY': return <Dna className="w-5 h-5 text-[#FF7448]" />;
+      case 'CHEMISTRY': return <FlaskConical className="w-5 h-5 text-[#FF7448]" />;
+      case 'FINANCE': return <TrendingUp className="w-5 h-5 text-[#FF7448]" />;
+      default: return <Zap className="w-5 h-5 text-[#FF7448]" />;
     }
   };
 
@@ -92,13 +89,13 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
     switch (diff) {
       case 'INTRODUCTORY':
       case 'BEGINNER':
-        return isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
       case 'INTERMEDIATE':
-        return isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
       case 'ADVANCED':
-        return isDark ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-700 border-rose-200';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
       default:
-        return isDark ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-cyan-50 text-cyan-700 border-cyan-200';
+        return 'bg-[#FF7448]/10 text-[#FF7448] border-[#FF7448]/20';
     }
   };
 
@@ -106,62 +103,51 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
     <div className="space-y-8 pb-12">
       
       {/* Header Banner */}
-      <div className={`p-6 sm:p-8 rounded-3xl border shadow-xl transition-colors relative overflow-hidden ${
-        isDark
-          ? 'bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950 border-slate-800'
-          : 'bg-gradient-to-br from-white via-sky-50 to-cyan-50 border-slate-200 shadow-md'
+      <div className={`p-6 sm:p-10 rounded-[28px] border transition-all card-nomu ${
+        isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
       }`}>
-        <div className="max-w-3xl space-y-3 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>LabVerse Universal Science & Simulation Catalog</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20">
+              <Compass className="w-3.5 h-3.5" />
+              <span>EXPLORE EXPERIMENTS</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Virtual Science & Engineering Catalog
+            </h1>
+            <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-400' : 'text-[#4A5568]'}`}>
+              Choose from 8 authentic laboratory simulations across 6 scientific disciplines.
+            </p>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Explore Interactive Virtual Laboratories
-          </h1>
-
-          <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Conduct experiments in physics, electronics, mechanics, quantum optics, chemistry reaction kinetics, biology, and quantitative financial risk. All modules run live numerical solvers.
-          </p>
-        </div>
-      </div>
-
-      {/* Search Bar & Filter Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-          <input
-            type="text"
-            placeholder="Search experiments by title, domain, or concept..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all ${
-              isDark 
-                ? 'bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500' 
-                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 shadow-sm'
-            }`}
-          />
+          {/* Search Box */}
+          <div className="relative w-full md:w-72">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search experiments..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-full border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF7448]/30 transition-all bg-[#FFF9F6] dark:bg-[#0D1219] border-[#E8E2DC] dark:border-[#2A3644]"
+            />
+          </div>
         </div>
 
         {/* Domain Filter Pills */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 pt-6 overflow-x-auto no-scrollbar">
           {domains.map((d) => {
+            const isSelected = selectedDomain === d.id;
             const Icon = d.icon;
-            const isActive = selectedDomain === d.id;
             return (
               <button
                 key={d.id}
                 onClick={() => setSelectedDomain(d.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
-                  isActive
-                    ? isDark
-                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold shadow-sm'
-                      : 'bg-cyan-600 text-white border-cyan-600 font-bold shadow-sm'
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#FF7448] text-white shadow-sm font-bold'
                     : isDark
-                    ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'bg-[#0D1219] text-slate-400 hover:text-slate-200 border border-[#2A3644]'
+                    : 'bg-[#FFF9F6] text-slate-700 hover:text-[#0F151D] border border-[#E8E2DC]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -173,130 +159,55 @@ export const ExperimentCatalog: React.FC<ExperimentCatalogProps> = ({
       </div>
 
       {/* Experiment Cards Grid */}
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((exp) => {
-            const isAvailable = exp.availability === 'AVAILABLE';
-            const firstObjective = exp.learningObjectives && exp.learningObjectives.length > 0
-              ? typeof exp.learningObjectives[0] === 'string'
-                ? exp.learningObjectives[0]
-                : exp.learningObjectives[0].description
-              : null;
-
-            return (
-              <div
-                key={exp.id}
-                className={`rounded-2xl border p-6 flex flex-col justify-between space-y-4 transition-all group ${
-                  isDark
-                    ? 'bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 shadow-lg'
-                    : 'bg-white border-slate-200 hover:border-cyan-400 shadow-sm hover:shadow-md'
-                }`}
-              >
-                <div className="space-y-3">
-                  {/* Header tags */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className={`p-2 rounded-xl border ${
-                        isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-                      }`}>
-                        {getDomainIcon(exp.domain)}
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                        {exp.domain}
-                      </span>
-                    </div>
-
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${getDifficultyBadge(exp.difficulty)}`}>
-                      {exp.difficulty}
-                    </span>
-                  </div>
-
-                  {/* Title & Tagline */}
-                  <div>
-                    <h3 className={`text-lg font-bold group-hover:text-cyan-400 transition-colors ${
-                      isDark ? 'text-slate-100' : 'text-slate-900'
-                    }`}>
-                      {exp.title}
-                    </h3>
-                    {exp.tagline && (
-                      <p className={`text-xs italic mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {exp.tagline}
-                      </p>
-                    )}
-                  </div>
-
-                  <p className={`text-xs line-clamp-3 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                    {exp.summary}
-                  </p>
-
-                  {/* Learning Objectives Preview */}
-                  {firstObjective && (
-                    <div className="space-y-1.5 pt-1">
-                      <div className={`text-[11px] font-semibold flex items-center space-x-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Key Learning Objective:</span>
-                      </div>
-                      <p className={`text-xs line-clamp-1 italic font-medium ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>
-                        • {firstObjective}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Duration & Status */}
-                  <div className="flex items-center justify-between text-[11px] font-mono border-t pt-3 border-slate-800/60">
-                    <div className="flex items-center space-x-1 text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>{exp.estimatedMinutes} mins</span>
-                    </div>
-
-                    <div className="flex items-center space-x-1">
-                      {isAvailable ? (
-                        <span className="text-emerald-400 font-semibold flex items-center space-x-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Simulation Ready</span>
-                        </span>
-                      ) : (
-                        <span className="text-amber-400 font-semibold flex items-center space-x-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>Coming Soon</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => onSelectExperiment(exp.id)}
-                    className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-slate-950" />
-                    <span>Select Experiment & Theory</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Empty State */
-        <div className={`p-12 text-center rounded-2xl border ${
-          isDark ? 'bg-slate-900/50 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
-        }`}>
-          <AlertCircle className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold mb-1">No experiments found</h3>
-          <p className="text-xs mb-4">No matching experiment modules for query &quot;{searchQuery}&quot;.</p>
-          <button
-            onClick={() => { setSearchQuery(''); setSelectedDomain('ALL'); }}
-            className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs cursor-pointer"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtered.map((exp) => (
+          <div
+            key={exp.id}
+            className={`p-6 rounded-[24px] border transition-all duration-200 flex flex-col justify-between space-y-5 card-nomu ${
+              isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
+            }`}
           >
-            Reset Catalog Search
-          </button>
-        </div>
-      )}
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 uppercase">
+                  {exp.domain}
+                </span>
+                <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${getDifficultyBadge(exp.difficulty)}`}>
+                  {exp.difficulty}
+                </span>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF9F6] dark:bg-[#0D1219] border border-[#E8E2DC] dark:border-[#2A3644] flex items-center justify-center shrink-0 mt-0.5">
+                  {getDomainIcon(exp.domain)}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold tracking-tight">
+                    {exp.title}
+                  </h3>
+                  <p className="text-[11px] font-mono text-[#FF7448] mt-0.5">
+                    {exp.estimatedMinutes} Mins • Guided & Sandbox
+                  </p>
+                </div>
+              </div>
+
+              <p className={`text-xs leading-relaxed line-clamp-3 ${isDark ? 'text-slate-400' : 'text-[#4A5568]'}`}>
+                {exp.summary}
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <button
+                onClick={() => onSelectExperiment(exp.id)}
+                className="btn-pill-primary h-9 px-4 text-xs cursor-pointer w-full"
+              >
+                <span>Launch Virtual Lab</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
     </div>
   );

@@ -18,7 +18,8 @@ import {
   X,
   UserCheck,
   ShieldCheck,
-  Home
+  LogOut,
+  User
 } from 'lucide-react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 
@@ -34,6 +35,9 @@ interface HeaderProps {
   onToggleTheme: () => void;
   onOpenPrivacy?: () => void;
   onGoHome?: () => void;
+  isAuthenticated?: boolean;
+  userDisplayName?: string;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -46,6 +50,9 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onOpenPrivacy,
   onGoHome,
+  isAuthenticated,
+  userDisplayName,
+  onSignOut,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDark = theme === 'dark';
@@ -65,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
       isDark ? 'bg-[#0D1219]/90' : 'bg-[#FFF9F6]/90'
     } backdrop-blur-md`}>
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 h-14 rounded-full border shadow-sm flex items-center justify-between transition-all ${
-        isDark ? 'bg-[#141B24] border-[#2A3644] text-[#F8FAFC]' : 'bg-white border-[#F0E6E1] text-[#0F151D]'
+        isDark ? 'bg-[#141B24] border-[#2A3644] text-[#F8FAFC]' : 'bg-white border-[#E8E2DC] text-[#0F151D]'
       }`}>
         
         {/* Brand Logo & Active Module */}
@@ -109,13 +116,45 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </nav>
 
-        {/* Right Session Status & Theme Toggle */}
+        {/* Right Session Status & User Auth & Theme Toggle */}
         <div className="flex items-center space-x-2">
           {hasFaults && (
             <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs animate-pulse">
-              <AlertTriangle className="w-3 h-3" />
+              <AlertTriangle className="w-3.5 h-3.5" />
               <span>Fault Active</span>
             </div>
+          )}
+
+          {/* User Status / Sign Out */}
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-1.5">
+              <div className="hidden lg:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 text-xs font-semibold">
+                <User className="w-3 h-3" />
+                <span>{userDisplayName || 'Researcher'}</span>
+              </div>
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  className={`p-1.5 rounded-full border transition-all flex items-center justify-center cursor-pointer text-slate-500 hover:text-rose-500 ${
+                    isDark ? 'border-[#2A3644] hover:bg-rose-950/40' : 'border-[#E8E2DC] hover:bg-rose-50'
+                  }`}
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/auth/login"
+              className={`hidden sm:inline-flex px-3 py-1 rounded-full border text-xs font-semibold transition-all ${
+                isDark
+                  ? 'border-[#2A3644] hover:bg-[#1B232E] text-slate-300'
+                  : 'border-[#E8E2DC] hover:bg-[#F5F1ED] text-slate-700'
+              }`}
+            >
+              Sign In
+            </Link>
           )}
 
           {/* Privacy & Security Disclosures Button */}
@@ -125,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
               className={`p-1.5 rounded-full border transition-all flex items-center justify-center cursor-pointer ${
                 isDark
                   ? 'bg-[#1B232E] hover:bg-[#2A3644] text-[#FF7448] border-[#2A3644]'
-                  : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-[#FF7448] border-[#F0E6E1]'
+                  : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-[#FF7448] border-[#E8E2DC]'
               }`}
               title="Privacy & Student Data Security"
             >
@@ -139,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`p-1.5 rounded-full border transition-all flex items-center justify-center cursor-pointer ${
               isDark
                 ? 'bg-[#1B232E] hover:bg-[#2A3644] text-amber-300 border-[#2A3644]'
-                : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-[#0F151D] border-[#F0E6E1]'
+                : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-[#0F151D] border-[#E8E2DC]'
             }`}
             title={`Switch to ${isDark ? 'Light' : 'Dark'} Theme`}
           >
@@ -152,7 +191,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
               isDark
                 ? 'bg-[#1B232E] hover:bg-[#2A3644] text-slate-400 hover:text-rose-400 border-[#2A3644]'
-                : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-slate-600 hover:text-rose-600 border-[#F0E6E1]'
+                : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-slate-600 hover:text-rose-600 border-[#E8E2DC]'
             }`}
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -162,7 +201,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={`md:hidden p-1.5 rounded-full border transition-colors cursor-pointer ${
-              isDark ? 'bg-[#1B232E] border-[#2A3644] text-slate-300' : 'bg-[#FFF9F6] border-[#F0E6E1] text-slate-700'
+              isDark ? 'bg-[#1B232E] border-[#2A3644] text-slate-300' : 'bg-[#FFF9F6] border-[#E8E2DC] text-slate-700'
             }`}
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -174,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className={`md:hidden mt-2 p-3 rounded-2xl border shadow-lg space-y-1 transition-all ${
-          isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#F0E6E1]'
+          isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
         }`}>
           <div className="grid grid-cols-2 gap-1.5">
             {navItems.map((item) => {

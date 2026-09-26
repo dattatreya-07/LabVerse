@@ -446,6 +446,20 @@ export default function Home() {
     addToast('info', 'Log Cleared', 'All observation records removed.');
   };
 
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setIsAuthenticated(false);
+      setUserDisplayName('');
+      addToast('info', 'Signed Out', 'You have been signed out safely. Operating in Guest Mode.');
+    } catch (err) {
+      console.warn('Sign out error:', err);
+      setIsAuthenticated(false);
+      setUserDisplayName('');
+    }
+  };
+
   // SSR Safe Guard: Render Landing Page during initial server render pass
   if (!isMounted || activeTab === 'landing') {
     return (
@@ -454,6 +468,7 @@ export default function Home() {
         userDisplayName={userDisplayName}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        onSignOut={handleSignOut}
         onEnterLab={(domain, expId) => {
           if (expId) {
             handleSelectExperiment(expId);
@@ -485,6 +500,9 @@ export default function Home() {
         onToggleTheme={handleToggleTheme}
         onOpenPrivacy={() => setPrivacyModalOpen(true)}
         onGoHome={() => setActiveTab('landing')}
+        isAuthenticated={isAuthenticated}
+        userDisplayName={userDisplayName}
+        onSignOut={handleSignOut}
       />
 
       {/* Main View Area */}

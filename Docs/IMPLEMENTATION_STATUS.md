@@ -1,104 +1,48 @@
-# LabVerse Implementation Status & System Architecture
+# LabVerse Implementation & Redesign Status
 
-**Last Updated:** September 25, 2026  
-**Platform Version:** Phase 2 Production Ready (v0.5.0)  
-**Framework:** Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4  
-
----
-
-## Executive Overview
-
-LabVerse is a production-grade, modular virtual science laboratory designed for interactive STEM learning. Every experiment is backed by a deterministic multi-domain simulation engine rather than hardcoded animations or video playback. The PCBX schematic circuit editor upgrade is integrated with a pure TypeScript **Modified Nodal Analysis (MNA)** numerical solver and a secure server-side **RAG AI Science Tutor** utilizing Groq LLM inference with grounded knowledge retrieval.
+**Date**: 2026-09-26  
+**Theme**: Nomu-Inspired Premium Scientific Education Design System  
+**Design Reference**: [nomu.store](https://nomu.store/) & [nomu.store/brand](https://nomu.store/brand)
 
 ---
 
-## Implementation Audit & Status Matrix
-
-### 1. Platform Core & App Shell
-| Feature / Module | Status | Evidence / Files | Description & Next Action |
-|---|---|---|---|
-| App Shell & Navigation | **IMPLEMENTED** | `src/components/nav/Header.tsx`, `src/app/page.tsx` | Top navbar, brand identity, session status indicator, responsive navigation tabs, and dark/light theme switcher. |
-| Dashboard View | **IMPLEMENTED** | `src/components/dashboard/DashboardView.tsx` | Overview of active experiment, recent sessions, category breakdown, progress tracking, and quick launch. |
-| URL Routing & URL Sync | **IMPLEMENTED** | `src/app/page.tsx` | Supports query params (`?tab=...&exp=...`), browser refresh persistence, and back navigation. |
-| Toast Notifications | **IMPLEMENTED** | `src/components/ui/Toast.tsx` | Non-intrusive scientific toast alerts for simulation runs, observations, and state resets. |
-| Session Storage & Migration | **IMPLEMENTED** | `src/lib/session/storage.ts`, `src/lib/session/session.test.ts` | Canonical `ExperimentSession` schema v1.0.0 persistence, graceful migration/recovery for malformed data, and CSV export. |
-| PDF & Analytical Reporting | **IMPLEMENTED** | `src/lib/report/pdf-generator.ts` | Canonical session snapshot PDF report generator using jsPDF with branding, objective, observation tables, fault logs, conclusion templates, and simulation disclaimers. |
-| Security & Hardening | **IMPLEMENTED** | `src/lib/security/*`, `docs/SECURITY.md`, `supabase/migrations/20260925000000_init_schema.sql` | Sliding window rate limiting, prompt injection defense, PII scrubbing, server-side simulation verifier, Supabase RLS policies, and student privacy disclosures. |
-| Theme System | **IMPLEMENTED** | `src/app/globals.css`, `src/app/page.tsx` | Tailored Slate Navy Charcoal (`dark`) and Clean Scientific Light (`light`) themes with seamless toggle. |
+## 1. Executive Summary
+LabVerse has been redesigned using the editorial aesthetic of Nomu—translated into an original, authentic science, engineering, and quantitative decision platform. The design system features a warm cream canvas (`#FFF9F6`), deep navy typography (`#0F151D`), restrained warm coral-orange accents (`#FF7448`), secondary soft scientific blue (`#D3E1FF`), 24px–36px card radiuses, 44px pill buttons, interactive 3D Three.js scientific models, subtle mouse/scroll parallax, and streamlined direct-to-lab navigation.
 
 ---
 
-### 2. Multi-Domain Physics & Simulation Engines
-| Domain | Engine File | Status | Verification / Tests |
-|---|---|---|---|
-| MNA Numerical DC Solver | `src/lib/simulation/circuits/dc-solver.ts`, `src/lib/simulation/circuits/dc-solver.test.ts` | **IMPLEMENTED** | Modified Nodal Analysis $[A][x]=[z]$ linear system solver with Gaussian elimination and partial pivoting. Calculates node voltages $V_n$, branch currents $I_b$, equivalent resistance $R_{eq}$, power $P$, and meter readings. |
-| RAG AI Tutor Engine | `src/lib/ai/rag.ts`, `src/lib/ai/rag.test.ts`, `src/app/api/tutor/route.ts` | **IMPLEMENTED** | Grounded knowledge retrieval, threshold scoring, prompt injection sanitization, server-side Groq LLM adapter (`GROQ_MODEL=llama-3.3-70b-versatile`), and curated offline FAQ fallback. |
-| Electronics & Circuits | `src/lib/simulation/circuits/ohms-law-sim.ts` | **IMPLEMENTED** | Connects MNA solver output to workspace state, gauge displays, observations, plot charts, and PDF reports. |
-| Classical Mechanics | `src/lib/simulation/mechanics/pendulum-sim.ts` | **IMPLEMENTED** | Simple pendulum period $T = 2\pi\sqrt{L/g}$, gravity selection (Earth, Moon, Mars, Jupiter), damped harmonic motion data generation. |
-| Quantum Optics | `src/lib/simulation/quantum/photoelectric-sim.ts` | **IMPLEMENTED** | Photoelectric effect solver $E_{photon} = h\nu$, stopping potential $V_s = (h\nu - \Phi)/e$, photocurrent saturation curves for Potassium, Sodium, Copper. |
-| Physics Unit Tests | `src/lib/simulation/engine.test.ts` | **IMPLEMENTED** | Automated tsx test suite covering electronics, mechanics, quantum equations, fault states, and scientific unit formatting. Pass rate: **100% (6/6 pass)**. |
-| MNA Solver Unit Tests | `src/lib/simulation/circuits/dc-solver.test.ts` | **IMPLEMENTED** | Unit tests for single resistor, series network, parallel network, open switch, and calibration fault. Pass rate: **100% (5/5 pass)**. |
-| RAG Knowledge Engine Tests | `src/lib/ai/rag.test.ts` | **IMPLEMENTED** | Unit tests for relevant chunk retrieval, query thresholding, prompt injection filtering, and citation provenance. Pass rate: **100% (5/5 pass)**. |
-| Circuit Document Engine | `src/lib/circuit/circuit-document-engine.ts`, `src/lib/circuit/circuit-document.test.ts` | **IMPLEMENTED** | Pure domain module for CircuitDocument schema v1.0.0, node duplication, graph validation, JSON import/export, and unit tests. Pass rate: **100% (6/6 pass)**. |
-| Security Unit Tests | `src/lib/security/security.test.ts` | **IMPLEMENTED** | Unit tests for rate limiting, prompt injection defense, PII scrubbing, server simulation verification, and bounded pagination. Pass rate: **100% (6/6 pass)**. |
+## 2. Completed Architecture & Visual Redesign
+
+| Chapter / Component | File | Design Updates & Features |
+| :--- | :--- | :--- |
+| **Global Design Tokens** | `src/app/globals.css` | Added full token palette (`#FFF9F6`, `#0F151D`, `#FF7448`, `#22C55E`, `#635BFF`), `.card-nomu`, `.btn-pill-primary`, `.btn-pill-secondary`, `.bg-science-grid`, and 200ms ease-out transitions. |
+| **Landing Page** | `src/components/landing/LandingPage.tsx` | 10 editorial chapters, mouse parallax motion, subtle scientific blueprint/grid background, domain cards (Chemistry, Physics, Electronics, Finance), and user sign out. |
+| **3D Knowledge Core** | `src/components/landing/KnowledgeCore.tsx` | Minimalist interactive atom/orbital Three.js core with slow orbital rotation and cursor responsiveness. |
+| **Direct Navigation Header** | `src/components/nav/Header.tsx` | Floating pill navbar with active coral indicators, Sign Out for authenticated researchers, and direct tab switching (Catalog, Theory, Lab, Plots, AI Tutor, Report). |
+| **Authentication Screens** | `src/app/auth/login/page.tsx`, `src/app/auth/signup/page.tsx` | Warm cream canvas, deep navy typography, Google OAuth button, clean inputs, and dark showcase side-panel. |
+| **Experiment Catalog** | `src/components/catalog/ExperimentCatalog.tsx` | 24px rounded cards, domain filter pills, difficulty indicators, and instant laboratory launch buttons. |
+| **Data & Plots** | `src/components/analysis/AnalysisChart.tsx`, `ObservationLog.tsx` | Dynamic X/Y parameter-vs-measurement plotting, real-time linear regression ($m, c, R^2$), and typographic mathematical formulas. |
+| **3D Apparatus Explainer** | `src/components/3d/Apparatus3DPreview.tsx` | Interactive 3D Three.js apparatus models for all 8 experiments. |
+| **Live Robot Assistant** | `src/components/tutor/LiveRobotTutor.tsx` | Floating bottom-right assistant with real-time wiring fault alerts, simulation celebration chimes, and Groq LLaMA 3.3 AI chat. |
 
 ---
 
-### 3. Experiment Catalog & Availability Matrix
-| Experiment ID | Title | Domain | Difficulty | Simulation Status | UI Availability |
-|---|---|---|---|---|---|
-| `ohms-law` | Verification of Ohm's Law | Electronics | Introductory | **Fully Implemented (MNA Engine)** | Available |
-| `pendulum` | Simple Pendulum Acceleration due to Gravity | Mechanics | Intermediate | **Fully Implemented** | Available |
-| `photoelectric` | Photoelectric Effect & Planck's Constant | Quantum Optics | Advanced | **Fully Implemented** | Available |
-| `rutherford` | Rutherford Gold Foil Scattering | Nuclear Physics | Advanced | *Engine Planned* | Coming Soon |
-| `gel-electrophoresis` | DNA Fragment Gel Electrophoresis | Biology | Intermediate | *Engine Planned* | Coming Soon |
+## 3. Supported Multi-Disciplinary Laboratories (8 Total)
+
+1. **Ohm's Law & Circuit Analysis** (`ELECTRONICS`)
+2. **Variable-Gravity Planetary Simple Pendulum** (`MECHANICS`)
+3. **Quantum Photoelectric Effect & Planck Constant** (`QUANTUM`)
+4. **3D Antenna Radiation & Wave Propagation** (`ECE`)
+5. **Chemical Reaction Kinetics & Arrhenius Law** (`CHEMISTRY`)
+6. **Modern Portfolio Risk & Asset Allocation** (`FINANCE`)
+7. **Rutherford Alpha Particle Scattering** (`NUCLEAR`)
+8. **DNA Agarose Gel Electrophoresis** (`BIOLOGY`)
 
 ---
 
-## Quality Assurance & Acceptance Verification Log
+## 4. Verification & Testing
 
-### Acceptance Criteria Matrix
-
-| Acceptance Criterion | Status | Evidence / Verification |
-|---|---|---|
-| **1. Linting & Type Safety** | **VERIFIED** | `npm run lint` $\rightarrow$ **0 errors**; `npx tsc --noEmit` $\rightarrow$ **0 errors**. |
-| **2. Physical Simulation Engine Accuracy** | **VERIFIED** | MNA numerical solver calculates $V=6\text{ V}, R=20\ \Omega \implies I=0.3000\text{ A}$ exact. Tested in `src/lib/simulation/circuits/dc-solver.test.ts` (5/5 passed). |
-| **3. Circuit Topology & Fault Injection** | **VERIFIED** | Open circuit discontinuities ($I = 0.00\text{ A}$) and ammeter calibration gain errors (+150%) correctly simulated without corrupting theoretical references. |
-| **4. Grounded AI Tutor & Citation Provenance** | **VERIFIED** | RAG retrieval verified in `src/lib/ai/rag.test.ts` (5/5 passed). Queries retrieve verified corpus chunks with exact title provenance. Prompt injection flagged. |
-| **5. Canonical Session Schema & Data Persistence** | **VERIFIED** | Schema `v1.0.0` canonical `ExperimentSession` persistence verified in `src/lib/session/session.test.ts` (4/4 passed). CSV export & malformed migration tested. |
-| **6. Academic PDF Report Generation** | **VERIFIED** | Reports generated using `jsPDF` from canonical session snapshot in `src/lib/report/pdf-generator.ts` with disclaimers and metadata. |
-| **7. Security & API Protection** | **VERIFIED** | Rate limiting (20 req/min/IP), request size caps (100KB), PII scrubbing, server simulation verifier, and Supabase RLS policies (`auth.uid() = user_id`) verified in `src/lib/security/security.test.ts` (6/6 passed). |
-| **8. End-to-End Release Workflows** | **VERIFIED** | All 7 critical release workflows verified in `src/lib/e2e/e2e-workflow.test.ts` (7/7 passed). |
-| **9. Production Next.js Build** | **VERIFIED** | `npm run build` $\rightarrow$ **Compiled successfully in 971ms**. Static pages (5/5) & dynamic API routes compiled cleanly. |
-
----
-
-## Command Execution & Test Audit Summary
-
-- **ESLint Check:** `npm run lint` $\rightarrow$ **Exit Code: 0 (0 errors)**
-- **TypeScript Type Safety:** `npx tsc --noEmit` $\rightarrow$ **Exit Code: 0 (0 errors)**
-- **Simulation Test Suite:** `npx tsx src/lib/simulation/engine.test.ts` $\rightarrow$ **Exit Code: 0 (6/6 passed)**
-- **MNA DC Solver Test Suite:** `npx tsx src/lib/simulation/circuits/dc-solver.test.ts` $\rightarrow$ **Exit Code: 0 (5/5 passed)**
-- **RAG Knowledge Test Suite:** `npx tsx src/lib/ai/rag.test.ts` $\rightarrow$ **Exit Code: 0 (5/5 passed)**
-- **Circuit Document Engine Tests:** `npx tsx src/lib/circuit/circuit-document.test.ts` $\rightarrow$ **Exit Code: 0 (6/6 passed)**
-- **Session & Schema Test Suite:** `npx tsx src/lib/session/session.test.ts` $\rightarrow$ **Exit Code: 0 (4/4 passed)**
-- **Security & Hardening Test Suite:** `npx tsx src/lib/security/security.test.ts` $\rightarrow$ **Exit Code: 0 (6/6 passed)**
-- **E2E Release Workflow Suite:** `npx tsx src/lib/e2e/e2e-workflow.test.ts` $\rightarrow$ **Exit Code: 0 (7/7 passed)**
-- **Production Next.js Build:** `npm run build` $\rightarrow$ **Exit Code: 0 (Compiled in 971ms)**
-
----
-
-## Next Phase Identification & Prerequisites
-
-### Phase 3 Roadmap: Extended Multi-Domain Experiment Engine & LTI LMS Integration
-
-#### Primary Objectives for Phase 3
-1. **Nuclear Physics Engine:** Implement Rutherford Gold Foil Scattering simulation (alpha particle trajectory deflection against heavy nucleus coulomb potential $\theta = 2 \cot^{-1}(b / b_0)$).
-2. **Biotechnology Engine:** Implement Gel Electrophoresis DNA fragment migration simulation ($v \propto 1 / \log(\text{base pairs})$ in agarose matrix).
-3. **LTI 1.3 LMS Integration:** Canvas / Moodle Learning Tools Interoperability (LTI) integration for gradebook sync and direct assignment launches.
-
-#### Prerequisites for Phase 3
-- Completed Phase 2 Production Core (MNA DC Solver, RAG AI Tutor, Canonical Persistence, PDF Reporting, Security Hardening) $\rightarrow$ **100% COMPLETE & VERIFIED**.
-
-
----
+- **TypeScript Compilation**: `npx tsc --noEmit` compiles with **0 errors**.
+- **Production Build**: Verified clean Next.js 16 build output.
+- **Theme Compatibility**: Seamless dark & light mode styling across all components.
+- **Authentication**: Supabase OAuth + Email authentication and clean Sign Out handling.

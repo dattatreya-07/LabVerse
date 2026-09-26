@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LabVerse | AI-Guided Virtual Physics & Electronics Laboratory",
-  description: "Interactive browser-based Ohm's Law virtual laboratory with real-time physical simulation, fault injection, RAG AI tutoring, and PDF report export.",
-  keywords: ["LabVerse", "Virtual Laboratory", "Ohm's Law", "Electronics", "Physics Simulation", "AI Tutor", "RAG"],
+  title: "LabVerse | Universal Virtual Science & Engineering Laboratory",
+  description: "Interactive browser-based virtual laboratory spanning Physics, Chemistry, Electronics, Mechanics, Quantum, Nuclear, Biology, and Finance with real-time simulations, fault injection, AI tutoring, and certified lab reports.",
+  keywords: ["LabVerse", "Virtual Laboratory", "Physics Simulation", "Chemistry Lab", "Electronics", "Quantum Mechanics", "Antenna Design", "Gel Electrophoresis", "Rutherford Scattering", "AI Tutor", "STEM Education"],
 };
 
 export default function RootLayout({

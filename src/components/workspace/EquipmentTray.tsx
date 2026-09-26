@@ -12,7 +12,15 @@ import {
   Sparkles,
   Lightbulb,
   CheckCircle2,
-  HelpCircle
+  HelpCircle,
+  FlaskConical,
+  Atom,
+  Dna,
+  TrendingUp,
+  Radio,
+  Timer,
+  Sun,
+  Shield
 } from 'lucide-react';
 
 interface EquipmentTrayProps {
@@ -50,6 +58,29 @@ export const EquipmentTray: React.FC<EquipmentTrayProps> = ({
       case 'BULB':
       case 'LED':
         return <Lightbulb className="w-5 h-5 text-yellow-400" />;
+      case 'PENDULUM':
+        return <Activity className="w-5 h-5 text-amber-400" />;
+      case 'STOPWATCH':
+        return <Timer className="w-5 h-5 text-cyan-400" />;
+      case 'LIGHT_SOURCE':
+        return <Sun className="w-5 h-5 text-purple-400" />;
+      case 'PHOTO_TUBE':
+        return <Shield className="w-5 h-5 text-purple-400" />;
+      case 'ALPHA_SOURCE':
+        return <Radio className="w-5 h-5 text-rose-400" />;
+      case 'GOLD_FOIL':
+        return <Shield className="w-5 h-5 text-amber-400" />;
+      case 'SCATTER_DETECTOR':
+        return <Gauge className="w-5 h-5 text-emerald-400" />;
+      case 'ELECTROPHORESIS_TANK':
+        return <Dna className="w-5 h-5 text-emerald-400" />;
+      case 'BEAKER':
+        return <FlaskConical className="w-5 h-5 text-emerald-400" />;
+      case 'SPECTROPHOTOMETER':
+        return <Gauge className="w-5 h-5 text-cyan-400" />;
+      case 'FINANCE_CHART':
+      case 'PORTFOLIO_LEDGER':
+        return <TrendingUp className="w-5 h-5 text-amber-400" />;
       default:
         return <Plus className="w-5 h-5 text-cyan-400" />;
     }

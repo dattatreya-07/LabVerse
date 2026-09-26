@@ -17,7 +17,7 @@ import { LandingPage } from '@/components/landing/LandingPage';
 import { createClient } from '@/lib/supabase/client';
 
 import { ExperimentSession, LearningMode, LabComponent, WireConnection, ObservationRecord, FaultLogEntry } from '@/types';
-import { getExperiment } from '@/lib/experiments/registry';
+import { getExperiment, getExperimentsByDomain } from '@/lib/experiments/registry';
 import { loadExperimentSession, saveExperimentSession, clearExperimentSession, evaluateAndCompleteSession, createInitialSession } from '@/lib/session/storage';
 import { syncDynamicSimulation } from '@/lib/simulation/dynamic-sync';
 
@@ -43,11 +43,20 @@ export default function Home() {
     const searchParams = new URLSearchParams(window.location.search);
     const tabParam = searchParams.get('tab') as NavTab | null;
     const expParam = searchParams.get('exp') || searchParams.get('experiment');
+    const domainParam = searchParams.get('domain');
 
-    const targetExpId = expParam || 'ohms-law';
-    if (expParam) {
-      setSelectedExpId(targetExpId);
+    let targetExpId = expParam;
+    if (!targetExpId && domainParam) {
+      const domainExps = getExperimentsByDomain(domainParam.toUpperCase() as any);
+      if (domainExps.length > 0) {
+        targetExpId = domainExps[0].id;
+      }
     }
+    if (!targetExpId) {
+      targetExpId = 'ohms-law';
+    }
+
+    setSelectedExpId(targetExpId);
 
     if (tabParam && ['dashboard', 'catalog', 'prep', 'lab', 'analysis', 'tutor', 'report'].includes(tabParam)) {
       setActiveTab(tabParam);

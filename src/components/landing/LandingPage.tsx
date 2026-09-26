@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Cpu,
@@ -59,16 +59,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (typeof window === 'undefined') return;
     const { clientX, clientY } = e;
-    const x = (clientX / window.innerWidth - 0.5) * 20; // -10px to +10px
-    const y = (clientY / window.innerHeight - 0.5) * 20;
+    const x = (clientX / window.innerWidth - 0.5) * 16;
+    const y = (clientY / window.innerHeight - 0.5) * 16;
     setMouseOffset({ x, y });
   };
 
-  const handleStart = (domain = 'ELECTRONICS', expId = 'ohms-law') => {
+  // Scroll Reveal Observer
+  const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('data-section-id');
+            if (id) {
+              setVisibleSections((prev) => ({ ...prev, [id]: true }));
+            }
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    const elements = document.querySelectorAll('[data-section-id]');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleStart = (domain?: string, expId?: string) => {
     if (onEnterLab) {
       onEnterLab(domain, expId);
     } else if (typeof window !== 'undefined') {
-      window.location.href = `/?tab=lab&domain=${domain}&exp=${expId}`;
+      if (expId) {
+        window.location.href = `/?tab=lab&domain=${domain || 'ALL'}&exp=${expId}`;
+      } else {
+        window.location.href = `/?tab=catalog${domain ? `&domain=${domain}` : ''}`;
+      }
     }
   };
 
@@ -174,7 +206,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       }`}
     >
       {/* Background Scientific Grid Motif */}
-      <div className="absolute inset-0 bg-science-grid pointer-events-none opacity-80" />
+      <div className="absolute inset-0 bg-science-grid pointer-events-none opacity-70" />
 
       {/* 1. CLEAN FLOATING NAVIGATION BAR */}
       <header className="sticky top-0 z-50 px-4 sm:px-8 pt-4 pb-2">
@@ -196,7 +228,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Links */}
           <div className="hidden md:flex items-center space-x-6 text-xs font-semibold">
             <button
-              onClick={() => handleStart('ELECTRONICS', 'ohms-law')}
+              onClick={() => handleStart()}
               className="opacity-80 hover:opacity-100 hover:text-[#FF7448] transition-colors cursor-pointer"
             >
               Explore Labs
@@ -283,36 +315,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* MAIN CHAPTER SEQUENCE */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 sm:space-y-28 py-8 sm:py-14 relative z-10">
 
-        {/* 01. HERO SECTION WITH PARALLAX ELEMENTS */}
-        <section className={`rounded-[28px] sm:rounded-[36px] border p-6 sm:p-10 lg:p-14 relative overflow-hidden transition-all card-nomu ${
-          isDark
-            ? 'bg-[#141B24] border-[#2A3644] shadow-2xl'
-            : 'bg-white border-[#E8E2DC] shadow-xl shadow-[#FF7448]/5'
-        }`}>
-          {/* Subtle Floating Scientific Parallax Nodes */}
-          <div
-            className="absolute top-8 right-12 hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 font-mono text-[11px] font-bold pointer-events-none transition-transform duration-300 ease-out"
-            style={{ transform: `translate(${mouseOffset.x * 0.8}px, ${mouseOffset.y * 0.8}px)` }}
-          >
-            <Sparkles className="w-3 h-3" />
-            <span>MNA Solver: V = 12.0V, I = 0.12A</span>
-          </div>
-
-          <div
-            className="absolute bottom-10 left-10 hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-[11px] font-bold pointer-events-none transition-transform duration-300 ease-out"
-            style={{ transform: `translate(${-mouseOffset.x * 0.6}px, ${-mouseOffset.y * 0.6}px)` }}
-          >
-            <CheckCircle2 className="w-3 h-3 text-[#22C55E]" />
-            <span>Deterministic Physical Accuracy</span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        {/* 01. HERO SECTION (NO OVERLAPPING BADGES) */}
+        <section
+          data-section-id="hero"
+          className={`rounded-[28px] sm:rounded-[36px] border p-6 sm:p-10 lg:p-12 relative overflow-hidden transition-all duration-700 card-nomu ${
+            visibleSections['hero'] ? 'opacity-100 translate-y-0' : 'opacity-95 translate-y-2'
+          } ${
+            isDark
+              ? 'bg-[#141B24] border-[#2A3644] shadow-2xl'
+              : 'bg-white border-[#E8E2DC] shadow-xl shadow-[#FF7448]/5'
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
             {/* Left Copy */}
             <div className="lg:col-span-7 space-y-6 z-10">
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#FF7448]/10 border border-[#FF7448]/20 text-[#FF7448] text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Interactive Science & Engineering</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#FF7448]/10 border border-[#FF7448]/20 text-[#FF7448] text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Interactive Science & Engineering</span>
+                </div>
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <span>Deterministic Accuracy</span>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -329,7 +355,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div className="flex flex-wrap items-center gap-3.5 pt-2">
                 <button
-                  onClick={() => handleStart('ELECTRONICS', 'ohms-law')}
+                  onClick={() => handleStart()}
                   className="btn-pill-primary cursor-pointer"
                 >
                   <span>Start Exploring Labs</span>
@@ -346,8 +372,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </button>
               </div>
 
-              {/* Minimal Trust Indicators */}
-              <div className="pt-3 flex flex-wrap items-center gap-5 text-xs font-semibold opacity-75">
+              {/* Minimal Clean Trust Indicators (No Collision) */}
+              <div className="pt-4 flex flex-wrap items-center gap-4 text-xs font-semibold opacity-75">
                 <div className="flex items-center space-x-1.5">
                   <Check className="w-4 h-4 text-[#22C55E]" />
                   <span>8 Multi-Discipline Labs</span>
@@ -363,10 +389,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </div>
 
-            {/* Right 3D Knowledge Core */}
+            {/* Right 3D Knowledge Core (Sized and Centered Cleanly) */}
             <div
-              className="lg:col-span-5 h-[320px] sm:h-[400px] w-full flex items-center justify-center relative transition-transform duration-500 ease-out"
-              style={{ transform: `translate(${-mouseOffset.x * 0.4}px, ${-mouseOffset.y * 0.4}px)` }}
+              className="lg:col-span-5 h-[300px] sm:h-[360px] w-full flex items-center justify-center relative transition-transform duration-500 ease-out"
+              style={{ transform: `translate(${-mouseOffset.x * 0.3}px, ${-mouseOffset.y * 0.3}px)` }}
             >
               <KnowledgeCore hoverDomain={hoverDomain} />
             </div>
@@ -375,7 +401,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 02. "THE IDEA" SECTION */}
-        <section className="text-center max-w-3xl mx-auto space-y-5 py-4">
+        <section
+          data-section-id="idea"
+          className={`text-center max-w-3xl mx-auto space-y-5 py-4 transition-all duration-700 ${
+            visibleSections['idea'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
             02 • PHILOSOPHY
           </p>
@@ -383,26 +414,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Learning should not stop at watching.
           </h2>
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-4 font-mono text-xs sm:text-sm font-bold">
-            <span className="px-4 py-2 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20">
+            <span className="px-4 py-2 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 shadow-sm">
               Build it.
             </span>
             <span className="text-slate-400">→</span>
-            <span className="px-4 py-2 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20">
+            <span className="px-4 py-2 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 shadow-sm">
               Run it.
             </span>
             <span className="text-slate-400">→</span>
-            <span className="px-4 py-2 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20">
+            <span className="px-4 py-2 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 shadow-sm">
               Break it.
             </span>
             <span className="text-slate-400">→</span>
-            <span className="px-4 py-2 rounded-full bg-[#0F151D] text-white dark:bg-white dark:text-[#0F151D]">
+            <span className="px-4 py-2 rounded-full bg-[#0F151D] text-white dark:bg-white dark:text-[#0F151D] shadow-sm">
               Understand it.
             </span>
           </div>
         </section>
 
         {/* 03. EXPLORE DOMAINS SECTION */}
-        <section className="space-y-6">
+        <section
+          data-section-id="domains"
+          className={`space-y-6 transition-all duration-700 ${
+            visibleSections['domains'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
               <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
@@ -418,13 +454,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-            {domains.map((d) => (
+            {domains.map((d, dIdx) => (
               <div
                 key={d.id}
                 onMouseEnter={() => setHoverDomain(d.id)}
                 onMouseLeave={() => setHoverDomain(null)}
                 onClick={() => handleStart(d.id, d.expId)}
-                className={`rounded-[24px] border p-6 sm:p-8 transition-all duration-200 group cursor-pointer flex flex-col justify-between space-y-6 card-nomu ${
+                style={{ transitionDelay: `${dIdx * 100}ms` }}
+                className={`rounded-[24px] border p-6 sm:p-8 transition-all duration-300 group cursor-pointer flex flex-col justify-between space-y-6 card-nomu ${
                   isDark
                     ? 'bg-[#141B24] border-[#2A3644] hover:border-[#FF7448]'
                     : 'bg-white border-[#E8E2DC] hover:border-[#FF7448] hover:shadow-lg hover:shadow-[#FF7448]/5'
@@ -465,7 +502,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 04. INTERACTIVE LEARNING (DARK FEATURE SECTION) */}
-        <section className="rounded-[28px] sm:rounded-[36px] bg-[#0F151D] border border-[#2A3644] p-7 sm:p-12 text-white space-y-8 shadow-2xl relative overflow-hidden">
+        <section
+          data-section-id="workflow"
+          className={`rounded-[28px] sm:rounded-[36px] bg-[#0F151D] border border-[#2A3644] p-7 sm:p-12 text-white space-y-8 shadow-2xl relative overflow-hidden transition-all duration-700 ${
+            visibleSections['workflow'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="max-w-2xl space-y-3 relative z-10">
             <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
               04 • INTERACTIVE WORKFLOW
@@ -484,7 +526,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {['01 LEARN', '02 BUILD', '03 CONNECT', '04 RUN', '05 OBSERVE', '06 ANALYZE', '07 MASTER'].map((step, sIdx) => (
               <div
                 key={sIdx}
-                className="p-3 rounded-2xl bg-[#141B24] border border-[#2A3644] flex flex-col justify-between space-y-1 text-slate-200"
+                className="p-3 rounded-2xl bg-[#141B24] border border-[#2A3644] flex flex-col justify-between space-y-1 text-slate-200 hover:border-[#FF7448] transition-colors"
               >
                 <span className="text-[10px] text-[#FF7448]">{step.split(' ')[0]}</span>
                 <span className="text-xs tracking-wider">{step.split(' ')[1]}</span>
@@ -494,7 +536,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 05. ADVANCED EXPERIMENTS SECTION */}
-        <section className="space-y-6">
+        <section
+          data-section-id="experiments"
+          className={`space-y-6 transition-all duration-700 ${
+            visibleSections['experiments'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="space-y-2">
             <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
               05 • EXPERIMENTS
@@ -509,6 +556,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div
                 key={idx}
                 onClick={() => handleStart(exp.domainKey, exp.expId)}
+                style={{ transitionDelay: `${idx * 80}ms` }}
                 className={`p-5 rounded-[24px] border transition-all duration-200 hover:scale-102 cursor-pointer flex flex-col justify-between space-y-4 card-nomu ${
                   isDark
                     ? 'bg-[#141B24] border-[#2A3644] hover:border-[#FF7448]'
@@ -540,9 +588,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 06. PROFESSIONAL PRACTICE & FINANCE */}
-        <section className={`rounded-[28px] sm:rounded-[36px] border p-7 sm:p-10 space-y-6 card-nomu ${
-          isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
-        }`}>
+        <section
+          data-section-id="practice"
+          className={`rounded-[28px] sm:rounded-[36px] border p-7 sm:p-10 space-y-6 card-nomu transition-all duration-700 ${
+            visibleSections['practice'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          } ${
+            isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
+          }`}
+        >
           <div className="max-w-2xl space-y-2">
             <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
               06 • PROFESSIONAL PRACTICE
@@ -586,7 +639,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 07. AI TUTOR (Grounded in Telemetry) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <section
+          data-section-id="tutor"
+          className={`grid grid-cols-1 lg:grid-cols-12 gap-6 items-center transition-all duration-700 ${
+            visibleSections['tutor'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="lg:col-span-5 space-y-4">
             <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
               07 • AI SOCRATIC TUTOR
@@ -644,9 +702,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 08. YOUR PROGRESS / METRICS */}
-        <section className={`rounded-[24px] border p-6 sm:p-10 card-nomu ${
-          isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
-        }`}>
+        <section
+          data-section-id="metrics"
+          className={`rounded-[24px] border p-6 sm:p-10 card-nomu transition-all duration-700 ${
+            visibleSections['metrics'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          } ${
+            isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#E8E2DC]'
+          }`}
+        >
           <div className="text-center max-w-xl mx-auto space-y-1.5 mb-6">
             <p className="text-xs font-bold tracking-widest text-[#FF7448] uppercase font-mono">
               08 • PLATFORM METRICS
@@ -677,11 +740,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* 09. CALL TO ACTION (CTA) */}
-        <section className={`rounded-[28px] sm:rounded-[36px] border p-8 sm:p-12 text-center space-y-5 card-nomu ${
-          isDark
-            ? 'bg-gradient-to-br from-[#141B24] to-[#1B232E] border-[#2A3644]'
-            : 'bg-gradient-to-br from-[#FFF9F6] to-white border-[#E8E2DC] shadow-lg shadow-[#FF7448]/10'
-        }`}>
+        <section
+          data-section-id="cta"
+          className={`rounded-[28px] sm:rounded-[36px] border p-8 sm:p-12 text-center space-y-5 card-nomu transition-all duration-700 ${
+            visibleSections['cta'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          } ${
+            isDark
+              ? 'bg-gradient-to-br from-[#141B24] to-[#1B232E] border-[#2A3644]'
+              : 'bg-gradient-to-br from-[#FFF9F6] to-white border-[#E8E2DC] shadow-lg shadow-[#FF7448]/10'
+          }`}
+        >
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
             Ready to enter the LabVerse?
           </h2>
@@ -690,7 +758,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
           <div className="pt-1">
             <button
-              onClick={() => handleStart('ELECTRONICS', 'ohms-law')}
+              onClick={() => handleStart()}
               className="btn-pill-primary cursor-pointer"
             >
               <span>Start Exploring Labs</span>
@@ -715,10 +783,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div className="flex items-center space-x-6 text-xs font-semibold">
             <button
-              onClick={() => handleStart('ELECTRONICS', 'ohms-law')}
+              onClick={() => handleStart()}
               className="hover:text-[#FF7448] transition-colors cursor-pointer"
             >
-              Virtual Lab
+              Virtual Labs
             </button>
             <button
               onClick={() => {

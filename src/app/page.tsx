@@ -579,6 +579,7 @@ export default function Home() {
 
             <ObservationLog
               observations={session.observations}
+              experiment={currentExperiment}
               onDeleteObservation={handleDeleteObservation}
               onClearObservations={handleClearObservations}
               theme={theme}

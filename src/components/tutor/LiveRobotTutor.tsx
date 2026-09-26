@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ExperimentDefinition,
@@ -26,9 +24,19 @@ import {
   Info,
   ChevronRight,
   HelpCircle,
-  Zap
+  Zap,
+  GraduationCap,
+  HeartHandshake,
+  Mic,
+  ShieldQuestion
 } from 'lucide-react';
 import { MathFormula } from '@/components/ui/MathFormula';
+import { 
+  TutorPersonality, 
+  speakTutorAudio, 
+  analyzeSimulationFailure, 
+  evaluateMysteryDeduction 
+} from '@/lib/ai/voice-tutor';
 
 export type RobotMood = 'idle' | 'happy' | 'thinking' | 'warning' | 'error';
 
@@ -71,6 +79,12 @@ export const LiveRobotTutor: React.FC<LiveRobotTutorProps> = ({
   const [speechBubble, setSpeechBubble] = useState<{ text: string; mood: RobotMood; title?: string } | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Personality & Voice Speech State
+  const [personality, setPersonality] = useState<TutorPersonality>('ENCOURAGING_GUIDE');
+  const [voiceSpeechEnabled, setVoiceSpeechEnabled] = useState<boolean>(true);
+  const [isMysteryMode, setIsMysteryMode] = useState<boolean>(false);
+  const [mysteryFaultId, setMysteryFaultId] = useState<string | null>(null);
 
   // Chat message history
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -137,6 +151,12 @@ export const LiveRobotTutor: React.FC<LiveRobotTutorProps> = ({
     setSpeechBubble({ text, mood: newMood, title });
     playChime(sound);
 
+    if (voiceSpeechEnabled) {
+      // Strip markdown asterisks and emojis for speech synthesis
+      const cleanVoiceText = text.replace(/[*_~`#✅⚠️🚨🎉❌🤖]/g, '').trim();
+      speakTutorAudio(cleanVoiceText, personality);
+    }
+
     if (!isOpen) {
       setUnreadCount((prev) => prev + 1);
     }
@@ -152,7 +172,7 @@ export const LiveRobotTutor: React.FC<LiveRobotTutorProps> = ({
         setMood('idle');
       }
     }, 7000);
-  }, [isOpen, playChime]);
+  }, [isOpen, playChime, voiceSpeechEnabled, personality]);
 
   // Welcome message when experiment loads
   useEffect(() => {
@@ -452,6 +472,54 @@ export const LiveRobotTutor: React.FC<LiveRobotTutorProps> = ({
             </div>
 
             <div className="flex items-center space-x-1">
+              {/* Personality Toggle (Strict Professor vs Encouraging Guide) */}
+              <button
+                onClick={() => {
+                  const nextP = personality === 'ENCOURAGING_GUIDE' ? 'STRICT_PROFESSOR' : 'ENCOURAGING_GUIDE';
+                  setPersonality(nextP);
+                  const desc = nextP === 'STRICT_PROFESSOR' ? 'Strict Professor (Formal Derivations & Rigor)' : 'Encouraging Guide (Intuitive & Supportive)';
+                  const noteMsg: ChatMessage = {
+                    id: `sys-p-${Date.now()}`,
+                    sender: 'system',
+                    text: `⚙️ **Tutor Personality Calibrated**: Switched to **${desc}**.`,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  };
+                  setMessages(prev => [...prev, noteMsg]);
+                  triggerSpeechBubble(`Tutor personality set to ${nextP === 'STRICT_PROFESSOR' ? 'Strict Professor' : 'Encouraging Guide'}.`, 'happy', 'Personality Updated', 'pop');
+                }}
+                className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+                  personality === 'STRICT_PROFESSOR'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                }`}
+                title="Toggle Personality: Strict Professor vs Encouraging Guide"
+              >
+                {personality === 'STRICT_PROFESSOR' ? (
+                  <>
+                    <GraduationCap className="w-3 h-3 text-amber-400" />
+                    <span className="hidden sm:inline">Strict Prof</span>
+                  </>
+                ) : (
+                  <>
+                    <HeartHandshake className="w-3 h-3 text-cyan-400" />
+                    <span className="hidden sm:inline">Guide</span>
+                  </>
+                )}
+              </button>
+
+              {/* Voice Speech Toggle */}
+              <button
+                onClick={() => setVoiceSpeechEnabled(!voiceSpeechEnabled)}
+                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                  voiceSpeechEnabled 
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                    : isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'
+                }`}
+                title={voiceSpeechEnabled ? "Voice Speech Synthesis: ON" : "Voice Speech Synthesis: MUTED"}
+              >
+                <Mic className="w-3.5 h-3.5" />
+              </button>
+
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
@@ -484,12 +552,37 @@ export const LiveRobotTutor: React.FC<LiveRobotTutorProps> = ({
             </div>
           </div>
 
-          {/* Quick Diagnostics Strip */}
+          {/* Quick Diagnostics & Mystery Mode Strip */}
           <div className={`px-3 py-2 border-b flex items-center space-x-1.5 overflow-x-auto text-[10px] no-scrollbar shrink-0 ${
             isDark ? 'bg-slate-950/40 border-slate-800/60' : 'bg-slate-100/60 border-slate-200'
           }`}>
-            <Sparkles className="w-3 h-3 text-cyan-500 shrink-0" />
-            <span className="opacity-60 shrink-0 font-semibold uppercase">Quick Prompts:</span>
+            <button
+              onClick={() => {
+                const faults = experiment.faults || [];
+                if (faults.length === 0) {
+                  alert('No preconfigured hardware faults in this module.');
+                  return;
+                }
+                const randomFault = faults[Math.floor(Math.random() * faults.length)];
+                setMysteryFaultId(randomFault.id);
+                setIsMysteryMode(true);
+                const mysteryMsg: ChatMessage = {
+                  id: `mystery-${Date.now()}`,
+                  sender: 'tutor',
+                  text: `🕵️ **Mystery Fault Mode Activated**: I have injected a hidden anomaly into the apparatus! Ask me diagnostic questions (e.g. *"What is the voltage drop?"*, *"Is there an open circuit?"*). I will report physical symptoms, but you must deduce the broken component!`,
+                  mood: 'warning',
+                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                };
+                setMessages(prev => [...prev, mysteryMsg]);
+                triggerSpeechBubble('Mystery fault mode active! Probe the circuit to find the broken component.', 'warning', 'Mystery Challenge', 'alert');
+              }}
+              className="px-2.5 py-1 rounded-md border text-[10px] font-bold bg-[#FF7448]/20 text-[#FF7448] border-[#FF7448]/40 hover:bg-[#FF7448]/30 transition-all flex items-center space-x-1 shrink-0 cursor-pointer"
+            >
+              <ShieldQuestion className="w-3 h-3" />
+              <span>Mystery Diagnosis</span>
+            </button>
+
+            <span className="opacity-60 shrink-0 font-semibold uppercase">Prompts:</span>
             {quickPrompts.map((p, idx) => (
               <button
                 key={idx}

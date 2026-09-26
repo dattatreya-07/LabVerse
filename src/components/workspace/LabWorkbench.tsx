@@ -19,6 +19,7 @@ import { TopologyValidator } from './TopologyValidator';
 import { LiveGauges } from './LiveGauges';
 import { ModeSelector } from './ModeSelector';
 import { ChallengeBanner } from './ChallengeBanner';
+import { HardwareSyncModal } from '@/components/hardware/HardwareSyncModal';
 import { 
   Compass, 
   Bot, 
@@ -28,7 +29,8 @@ import {
   ArrowRight, 
   ShieldCheck, 
   CheckSquare, 
-  Square 
+  Square,
+  Usb
 } from 'lucide-react';
 
 interface LabWorkbenchProps {
@@ -92,6 +94,7 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
   const [selectedComponent, setSelectedComponent] = useState<LabComponent | null>(null);
   const [selectedWire, setSelectedWire] = useState<WireConnection | null>(null);
   const [inspectingComponent, setInspectingComponent] = useState<LabComponent | null>(null);
+  const [hardwareModalOpen, setHardwareModalOpen] = useState<boolean>(false);
 
   const guidedSteps = experiment.workspace.guidedSteps || [];
   const totalSteps = guidedSteps.length || 1;
@@ -130,6 +133,20 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
         <ModeSelector currentMode={mode} onChangeMode={onChangeMode} theme={theme} />
 
         <div className="flex items-center space-x-3">
+          {/* WebSerial USB Hardware Connect Button */}
+          <button
+            onClick={() => setHardwareModalOpen(true)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer ${
+              isDark
+                ? 'bg-[#FF7448]/10 hover:bg-[#FF7448]/20 text-[#FF7448] border-[#FF7448]/30'
+                : 'bg-orange-50 hover:bg-orange-100 text-[#FF7448] border-orange-200'
+            }`}
+            title="Connect physical Arduino / ESP32 via WebSerial"
+          >
+            <Usb className="w-3.5 h-3.5 text-[#FF7448]" />
+            <span className="hidden sm:inline">Hardware Sync</span>
+          </button>
+
           {/* Complete Lab Session Action Button */}
           {onCompleteSession && (
             <button
@@ -357,6 +374,14 @@ export const LabWorkbench: React.FC<LabWorkbenchProps> = ({
           theme={theme}
         />
       )}
+
+      {/* 10. Hardware Bridge Serial Modal */}
+      <HardwareSyncModal
+        isOpen={hardwareModalOpen}
+        onClose={() => setHardwareModalOpen(false)}
+        onApplyParameter={onParameterChange}
+        theme={theme}
+      />
 
     </div>
   );

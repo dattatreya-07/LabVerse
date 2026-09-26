@@ -390,14 +390,41 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       {/* Floating Action Controls when Selected */}
       {isSelected && (
         <g transform="translate(0, -65)" className="cursor-pointer">
-          <circle cx="-30" cy="0" r="11" fill="#0284c7" onClick={(e) => { e.stopPropagation(); onRotate(component); }} />
-          <path d="M -34 -3 L -26 -3 M -30 -7 L -26 -3 L -30 1" stroke="#ffffff" strokeWidth="1.5" fill="none" pointerEvents="none" />
+          {/* Rotate Button */}
+          <g 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onRotate(component); 
+            }}
+          >
+            <title>Rotate 90°</title>
+            <circle cx="-30" cy="0" r="11" fill="#0284c7" />
+            <path d="M -34 -3 L -26 -3 M -30 -7 L -26 -3 L -30 1" stroke="#ffffff" strokeWidth="1.5" fill="none" pointerEvents="none" />
+          </g>
 
-          <circle cx="0" cy="0" r="11" fill="#0f172a" stroke="#0284c7" strokeWidth="1.5" onClick={(e) => { e.stopPropagation(); onInspect(component); }} />
-          <circle cx="0" cy="0" r="4" fill="#38bdf8" pointerEvents="none" />
+          {/* Inspect Properties Button */}
+          <g 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onInspect(component); 
+            }}
+          >
+            <title>Inspect Properties</title>
+            <circle cx="0" cy="0" r="11" fill="#0f172a" stroke="#0284c7" strokeWidth="1.5" />
+            <circle cx="0" cy="0" r="4" fill="#38bdf8" pointerEvents="none" />
+          </g>
 
-          <circle cx="30" cy="0" r="11" fill="#f43f5e" onClick={(e) => { e.stopPropagation(); onDelete(component.id); }} />
-          <path d="M 26 -4 L 34 4 M 34 -4 L 26 4" stroke="#ffffff" strokeWidth="1.5" pointerEvents="none" />
+          {/* Delete Button (Event Isolated) */}
+          <g 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onDelete(component.id); 
+            }}
+          >
+            <title>Delete Component</title>
+            <circle cx="30" cy="0" r="11" fill="#f43f5e" />
+            <path d="M 26 -4 L 34 4 M 34 -4 L 26 4" stroke="#ffffff" strokeWidth="1.5" pointerEvents="none" />
+          </g>
         </g>
       )}
     </g>

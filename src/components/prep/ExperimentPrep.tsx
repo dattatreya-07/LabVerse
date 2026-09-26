@@ -1,10 +1,10 @@
-'use client';
-
 import React from 'react';
 import { ExperimentDefinition } from '@/types';
-import { BookOpen, CheckSquare, Square, Zap, ShieldAlert, ArrowRight, Play, Trophy, Box } from 'lucide-react';
+import { BookOpen, CheckSquare, Square, Zap, ShieldAlert, ArrowRight, Play, Trophy, Box, Atom, Globe2 } from 'lucide-react';
 import { Apparatus3DPreview } from '@/components/3d/Apparatus3DPreview';
 import { MathFormula } from '@/components/ui/MathFormula';
+import { DynamicAtomViewer } from '@/components/chemistry/DynamicAtomViewer';
+import { SolarSystemGravityViewer } from '@/components/physics/SolarSystemGravityViewer';
 
 interface ExperimentPrepProps {
   experiment: ExperimentDefinition;
@@ -57,6 +57,19 @@ export const ExperimentPrep: React.FC<ExperimentPrepProps> = ({
 
         <Apparatus3DPreview experiment={experiment} theme={theme} />
       </div>
+
+      {/* Domain-Specific Interactive 3D Simulators */}
+      {['CHEMISTRY', 'NUCLEAR', 'QUANTUM'].includes(experiment.domain) && (
+        <div className="space-y-3">
+          <DynamicAtomViewer theme={theme} />
+        </div>
+      )}
+
+      {['PHYSICS', 'MECHANICS'].includes(experiment.domain) && (
+        <div className="space-y-3">
+          <SolarSystemGravityViewer theme={theme} />
+        </div>
+      )}
 
       {/* Learning Objectives */}
       <div className={`p-6 rounded-2xl border space-y-4 ${

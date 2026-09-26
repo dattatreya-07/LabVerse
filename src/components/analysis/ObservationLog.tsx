@@ -1,11 +1,11 @@
-'use client';
-
 import React, { useMemo } from 'react';
-import { ObservationRecord } from '@/types';
-import { Table, Trash2, Download, FileSpreadsheet, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ObservationRecord, ExperimentDefinition } from '@/types';
+import { Table, Trash2, Download, FileSpreadsheet, CheckCircle2, AlertTriangle, Code2 } from 'lucide-react';
+import { exportObservationsToCSV, exportToJupyterNotebook } from '@/lib/export/data-export';
 
 interface ObservationLogProps {
   observations: ObservationRecord[];
+  experiment?: ExperimentDefinition;
   onDeleteObservation: (id: string) => void;
   onClearObservations: () => void;
   theme?: 'dark' | 'light';
@@ -13,6 +13,7 @@ interface ObservationLogProps {
 
 export const ObservationLog: React.FC<ObservationLogProps> = ({
   observations = [],
+  experiment,
   onDeleteObservation,
   onClearObservations,
   theme = 'dark',
@@ -39,28 +40,38 @@ export const ObservationLog: React.FC<ObservationLogProps> = ({
     };
   }, [observations]);
 
-  const exportCSV = () => {
-    if (observations.length === 0) return;
+  const handleExportCSV = () => {
+    if (experiment) {
+      exportObservationsToCSV(observations, experiment);
+    } else {
+      if (observations.length === 0) return;
+      const headers = ['Run #', 'Timestamp', ...paramKeys, ...measKeys, 'Faults', 'Notes'];
+      const rows = observations.map((obs, idx) => [
+        obs.runIndex ?? idx + 1,
+        `"${obs.timestamp || ''}"`,
+        ...paramKeys.map((k) => obs.parameters?.[k] ?? ''),
+        ...measKeys.map((k) => obs.measurements?.[k] ?? ''),
+        `"${(obs.faultsActive || []).join('; ')}"`,
+        `"${obs.notes || ''}"`,
+      ]);
+      const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `LabVerse_Experiment_Data_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
-    const headers = ['Run #', 'Timestamp', ...paramKeys, ...measKeys, 'Faults', 'Notes'];
-    const rows = observations.map((obs, idx) => [
-      obs.runIndex ?? idx + 1,
-      `"${obs.timestamp || ''}"`,
-      ...paramKeys.map((k) => obs.parameters?.[k] ?? ''),
-      ...measKeys.map((k) => obs.measurements?.[k] ?? ''),
-      `"${(obs.faultsActive || []).join('; ')}"`,
-      `"${obs.notes || ''}"`,
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `LabVerse_Experiment_Data_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportJupyter = () => {
+    if (experiment) {
+      exportToJupyterNotebook(observations, experiment);
+    } else {
+      alert('Select an experiment before exporting Jupyter notebook.');
+    }
   };
 
   return (
@@ -90,7 +101,21 @@ export const ObservationLog: React.FC<ObservationLogProps> = ({
 
         <div className="flex items-center space-x-2">
           <button
-            onClick={exportCSV}
+            onClick={handleExportJupyter}
+            disabled={observations.length === 0}
+            className={`px-3 py-1.5 rounded-lg disabled:opacity-40 text-xs font-semibold border transition-all flex items-center space-x-1.5 cursor-pointer ${
+              isDark
+                ? 'bg-[#FF7448]/10 hover:bg-[#FF7448]/20 text-[#FF7448] border-[#FF7448]/30'
+                : 'bg-orange-50 hover:bg-orange-100 text-[#FF7448] border-orange-200'
+            }`}
+            title="Download Jupyter Notebook (.ipynb) with Python analysis and plots"
+          >
+            <Code2 className="w-3.5 h-3.5 text-[#FF7448]" />
+            <span>Export Jupyter (.ipynb)</span>
+          </button>
+
+          <button
+            onClick={handleExportCSV}
             disabled={observations.length === 0}
             className={`px-3 py-1.5 rounded-lg disabled:opacity-40 text-xs font-semibold border transition-all flex items-center space-x-1.5 cursor-pointer ${
               isDark

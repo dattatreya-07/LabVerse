@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header, NavTab } from '@/components/nav/Header';
-import { DashboardView } from '@/components/dashboard/DashboardView';
 import { ExperimentCatalog } from '@/components/catalog/ExperimentCatalog';
 import { ExperimentPrep } from '@/components/prep/ExperimentPrep';
 import { LabWorkbench } from '@/components/workspace/LabWorkbench';
@@ -455,13 +454,21 @@ export default function Home() {
         userDisplayName={userDisplayName}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        onEnterLab={(domain, expId) => {
+          if (expId) {
+            handleSelectExperiment(expId);
+            handleTabChange('lab');
+          } else {
+            handleTabChange('catalog');
+          }
+        }}
       />
     );
   }
 
   return (
-    <div className={`min-h-screen font-sans selection:bg-cyan-500 selection:text-slate-950 flex flex-col transition-colors ${
-      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
+    <div className={`min-h-screen font-sans selection:bg-[#FF7448] selection:text-white flex flex-col transition-colors ${
+      isDark ? 'bg-[#0D1219] text-[#F8FAFC]' : 'bg-[#FFF9F6] text-[#0F151D]'
     }`}>
       
       {/* Toast Notification Container */}
@@ -477,22 +484,12 @@ export default function Home() {
         theme={theme}
         onToggleTheme={handleToggleTheme}
         onOpenPrivacy={() => setPrivacyModalOpen(true)}
+        onGoHome={() => setActiveTab('landing')}
       />
 
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* TAB 0: DASHBOARD */}
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            currentSession={session}
-            currentExperiment={currentExperiment}
-            onSelectExperiment={handleSelectExperiment}
-            onNavigateTab={handleTabChange}
-            theme={theme}
-          />
-        )}
-
         {/* TAB 1: EXPERIMENT CATALOG */}
         {activeTab === 'catalog' && (
           <ExperimentCatalog

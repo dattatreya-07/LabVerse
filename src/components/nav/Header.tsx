@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { 
   Cpu, 
   RotateCcw, 
@@ -13,15 +14,15 @@ import {
   AlertTriangle, 
   LineChart, 
   Compass, 
-  LayoutDashboard,
   Menu,
   X,
   UserCheck,
-  ShieldCheck
+  ShieldCheck,
+  Home
 } from 'lucide-react';
 import { ExperimentSession, ExperimentDefinition } from '@/types';
 
-export type NavTab = 'dashboard' | 'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report';
+export type NavTab = 'catalog' | 'prep' | 'lab' | 'analysis' | 'tutor' | 'report';
 
 interface HeaderProps {
   activeTab: NavTab;
@@ -32,6 +33,7 @@ interface HeaderProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   onOpenPrivacy?: () => void;
+  onGoHome?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -43,54 +45,41 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
   onOpenPrivacy,
+  onGoHome,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDark = theme === 'dark';
   const hasFaults = session.activeFaults.length > 0;
 
   const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" /> },
-    { id: 'catalog', label: 'Catalog', icon: <Compass className="w-3.5 h-3.5 text-sky-400" /> },
-    { id: 'prep', label: 'Theory', icon: <BookOpen className="w-3.5 h-3.5 text-amber-400" /> },
-    { id: 'lab', label: 'Virtual Lab', icon: <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" /> },
-    { id: 'analysis', label: 'Data & Plots', icon: <LineChart className="w-3.5 h-3.5 text-cyan-400" /> },
-    { id: 'tutor', label: 'AI Tutor', icon: <Bot className="w-3.5 h-3.5 text-indigo-400" />, badge: 'AI' },
-    { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5 text-cyan-400" /> },
+    { id: 'catalog', label: 'Explore Labs', icon: <Compass className="w-3.5 h-3.5" /> },
+    { id: 'prep', label: 'Theory & 3D', icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { id: 'lab', label: 'Virtual Lab', icon: <Play className="w-3.5 h-3.5 fill-current" /> },
+    { id: 'analysis', label: 'Data & Plots', icon: <LineChart className="w-3.5 h-3.5" /> },
+    { id: 'tutor', label: 'AI Tutor', icon: <Bot className="w-3.5 h-3.5" />, badge: 'Groq' },
+    { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5" /> },
   ];
 
   return (
-    <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors ${
-      isDark
-        ? 'bg-slate-950/90 border-slate-800 text-slate-100'
-        : 'bg-white/90 border-slate-200 text-slate-900 shadow-sm'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className={`sticky top-0 z-40 px-3 sm:px-6 pt-3 pb-2 transition-colors ${
+      isDark ? 'bg-[#0D1219]/90' : 'bg-[#FFF9F6]/90'
+    } backdrop-blur-md`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 h-14 rounded-full border shadow-sm flex items-center justify-between transition-all ${
+        isDark ? 'bg-[#141B24] border-[#2A3644] text-[#F8FAFC]' : 'bg-white border-[#F0E6E1] text-[#0F151D]'
+      }`}>
         
         {/* Brand Logo & Active Module */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-          <div className={`p-2 rounded-xl border flex items-center justify-center transition-all ${
-            isDark
-              ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
-              : 'bg-cyan-50 border-cyan-300 text-cyan-600 shadow-sm'
-          }`}>
-            <Cpu className="w-6 h-6 animate-pulse" />
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={onGoHome || (() => setActiveTab('catalog'))}>
+          <div className="w-7 h-7 rounded-full bg-[#FF7448] flex items-center justify-center text-white shadow-sm">
+            <Cpu className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-sky-500 to-indigo-600 dark:from-cyan-400 dark:via-sky-300 dark:to-indigo-400">
-                LabVerse
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-widest ${
-                isDark
-                  ? 'bg-cyan-950 text-cyan-400 border-cyan-800/60'
-                  : 'bg-cyan-100 text-cyan-800 border-cyan-300'
-              }`}>
-                {experiment.domain}
-              </span>
-            </div>
-            <p className={`text-[11px] hidden sm:block font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {experiment.title}
-            </p>
+          <div className="flex items-center space-x-2">
+            <span className="font-extrabold text-sm tracking-tight font-mono">
+              LABVERSE
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF7448]/10 text-[#FF7448] border border-[#FF7448]/20 uppercase tracking-wider hidden sm:inline">
+              {experiment.domain}
+            </span>
           </div>
         </div>
 
@@ -102,20 +91,18 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all relative cursor-pointer ${
                   isActive
-                    ? isDark
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                      : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
+                    ? 'bg-[#FF7448] text-white shadow-sm font-bold'
                     : isDark
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-[#1B232E]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-[#FFF9F6]'
                 }`}
               >
                 {item.icon}
                 <span>{item.label}</span>
-                {item.badge && (
-                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping absolute -top-0.5 -right-0.5" />
+                {item.badge && !isActive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF7448] animate-ping absolute -top-0.5 -right-0.5" />
                 )}
               </button>
             );
@@ -123,68 +110,62 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
 
         {/* Right Session Status & Theme Toggle */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center space-x-2">
           {hasFaults && (
-            <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs animate-pulse">
-              <AlertTriangle className="w-3.5 h-3.5" />
+            <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs animate-pulse">
+              <AlertTriangle className="w-3 h-3" />
               <span>Fault Active</span>
             </div>
           )}
-
-          {/* Student / Session Badge */}
-          <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono bg-cyan-500/10 border-cyan-500/20 text-cyan-400">
-            <UserCheck className="w-3.5 h-3.5" />
-            <span className="font-semibold">{session.mode}</span>
-          </div>
 
           {/* Privacy & Security Disclosures Button */}
           {onOpenPrivacy && (
             <button
               onClick={onOpenPrivacy}
-              className={`p-2 rounded-lg border transition-all flex items-center justify-center ${
+              className={`p-1.5 rounded-full border transition-all flex items-center justify-center cursor-pointer ${
                 isDark
-                  ? 'bg-slate-900 hover:bg-slate-800 text-cyan-400 border-slate-800'
-                  : 'bg-slate-100 hover:bg-slate-200 text-cyan-600 border-slate-300'
+                  ? 'bg-[#1B232E] hover:bg-[#2A3644] text-[#FF7448] border-[#2A3644]'
+                  : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-[#FF7448] border-[#F0E6E1]'
               }`}
-              title="Privacy & Student Data Security Disclosures"
+              title="Privacy & Student Data Security"
             >
-              <ShieldCheck className="w-4 h-4" />
+              <ShieldCheck className="w-3.5 h-3.5" />
             </button>
           )}
 
           {/* Theme Toggle Button */}
           <button
             onClick={onToggleTheme}
-            className={`p-2 rounded-lg border transition-all flex items-center justify-center ${
+            className={`p-1.5 rounded-full border transition-all flex items-center justify-center cursor-pointer ${
               isDark
-                ? 'bg-slate-900 hover:bg-slate-800 text-amber-300 border-slate-800'
-                : 'bg-slate-100 hover:bg-slate-200 text-indigo-600 border-slate-300'
+                ? 'bg-[#1B232E] hover:bg-[#2A3644] text-amber-300 border-[#2A3644]'
+                : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-[#0F151D] border-[#F0E6E1]'
             }`}
             title={`Switch to ${isDark ? 'Light' : 'Dark'} Theme`}
           >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           </button>
 
           <button
             onClick={onResetSession}
-            title="Reset Active Experiment Session"
-            className={`p-2 rounded-lg border transition-colors ${
+            title="Reset Active Session"
+            className={`p-1.5 rounded-full border transition-colors cursor-pointer ${
               isDark
-                ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border-slate-800'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rose-600 border-slate-300'
+                ? 'bg-[#1B232E] hover:bg-[#2A3644] text-slate-400 hover:text-rose-400 border-[#2A3644]'
+                : 'bg-[#FFF9F6] hover:bg-[#F9F1EC] text-slate-600 hover:text-rose-600 border-[#F0E6E1]'
             }`}
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
           {/* Mobile Hamburger Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`md:hidden p-2 rounded-lg border transition-colors ${
-              isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'
+            className={`md:hidden p-1.5 rounded-full border transition-colors cursor-pointer ${
+              isDark ? 'bg-[#1B232E] border-[#2A3644] text-slate-300' : 'bg-[#FFF9F6] border-[#F0E6E1] text-slate-700'
             }`}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
 
@@ -192,10 +173,10 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className={`md:hidden border-b p-4 space-y-2 transition-all ${
-          isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200 shadow-lg'
+        <div className={`md:hidden mt-2 p-3 rounded-2xl border shadow-lg space-y-1 transition-all ${
+          isDark ? 'bg-[#141B24] border-[#2A3644]' : 'bg-white border-[#F0E6E1]'
         }`}>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -205,14 +186,12 @@ export const Header: React.FC<HeaderProps> = ({
                     setActiveTab(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex items-center space-x-2 p-2.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center space-x-2 p-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? isDark
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                        : 'bg-cyan-100 text-cyan-800 border border-cyan-300 font-bold'
+                      ? 'bg-[#FF7448] text-white font-bold'
                       : isDark
-                      ? 'bg-slate-900 text-slate-400 hover:text-slate-200'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                      ? 'bg-[#1B232E] text-slate-400 hover:text-slate-200'
+                      : 'bg-[#FFF9F6] text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {item.icon}
